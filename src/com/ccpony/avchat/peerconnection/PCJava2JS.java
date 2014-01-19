@@ -40,19 +40,7 @@ public class PCJava2JS {
 	public void onicecandidate(String param1) {
 		js_runtime.loadUrl("javascript:peerconnection.onicecandidate("+ param1 +")"); 
 	}
-	
-	public void onaddstream() {
-		js_runtime.loadUrl("javascript:peerconnection.onaddstream()");
-	}
-	
-	public void onremovestream() {
-		js_runtime.loadUrl("javascript:peerconnection.onremovestream()");
-	}
-	
-	public void oniceconnectionstatechange() {
-		js_runtime.loadUrl("javascript:peerconnection.oniceconnectionstatechange()");
-	}
-	
+		
 	public void cb_createOffer() {
 		js_runtime.loadUrl("javascript:peerconnection.cb_createOffer()");
 	}
@@ -166,6 +154,7 @@ public class PCJava2JS {
 		@Override
 		public void onIceConnectionChange(
 				PeerConnection.IceConnectionState newState) {
+			js_runtime.loadUrl("javascript:peerconnection.oniceconnectionstatechange()");
 		}
 
 		@Override
@@ -175,6 +164,7 @@ public class PCJava2JS {
 
 		@Override
 		public void onAddStream(final MediaStream stream) {
+			js_runtime.loadUrl("javascript:peerconnection.onaddstream()");
 			abortUnless(stream.audioTracks.size() <= 1
 					&& stream.videoTracks.size() <= 1,
 					"Weird-looking stream: " + stream);
@@ -187,6 +177,7 @@ public class PCJava2JS {
 
 		@Override
 		public void onRemoveStream(final MediaStream stream) {
+			js_runtime.loadUrl("javascript:peerconnection.onremovestream()");
 			stream.videoTracks.get(0).dispose();
 		}
 
