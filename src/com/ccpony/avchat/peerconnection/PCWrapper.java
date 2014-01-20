@@ -29,10 +29,10 @@ import android.widget.Toast;
 
 import com.ccpony.avchat.view.VideoStreamsView;
 
-public class PCJava2JS {
+public class PCWrapper {
 	private WebView js_runtime = null;
 	private Activity activity = null;
-	private static final String TAG = "PCJava2JS";
+	private static final String TAG = "PCWrapper";
 	private Toast logToast;
 	private VideoStreamsView vsv;
 	private PeerConnectionFactory factory;
@@ -45,7 +45,7 @@ public class PCJava2JS {
 	public MediaConstraints videoConstraints;
 	List<PeerConnection.IceServer> iceServers = null;
 
-	public PCJava2JS(WebView js_runtime, Activity activity) {
+	public PCWrapper(WebView js_runtime, Activity activity) {
 		this.js_runtime = js_runtime;
 		this.activity = activity;
 
