@@ -14,7 +14,7 @@ public class JSController {
 	public PlayerManager playerManager = new PlayerManager(); 
 	public PCManager pcManager = new PCManager();
 	public ViewManager viewManager = new ViewManager();
-	public AVDeviceManager avDeviceManager = new AVDeviceManager();
+	public AVDeviceManager avDeviceManager = null;
 	
 	public void start(Activity activity,String js_controller_url) {
 		js_runtime = new WebView(activity);		
@@ -23,7 +23,9 @@ public class JSController {
 		js_runtime.addJavascriptInterface(playerManager, "playerManager");
 		js_runtime.addJavascriptInterface(pcManager, "pcManager");
 		js_runtime.addJavascriptInterface(viewManager, "viewManager");
-		js_runtime.addJavascriptInterface(avDeviceManager, "avDeviceManager");		
+		js_runtime.addJavascriptInterface(avDeviceManager, "avDeviceManager");
+		
+		avDeviceManager = new AVDeviceManager(js_runtime);
 						
 		js_runtime.loadUrl(js_controller_url);
 	}
