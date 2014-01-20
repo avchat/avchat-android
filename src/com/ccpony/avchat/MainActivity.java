@@ -6,13 +6,14 @@ import android.view.Menu;
 
 public class MainActivity extends Activity {
 	private JSController js_controller = new JSController();
+	private String	js_controller_url = "http://192.168.1.201:3001/index.html";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		js_controller.start(this);
+		js_controller.start(this, js_controller_url);
 	}
 	
 	@Override
