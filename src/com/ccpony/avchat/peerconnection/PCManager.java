@@ -7,9 +7,15 @@ import org.json.JSONObject;
 
 import android.util.JsonReader;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
 
 public class PCManager {
-	HashMap<String, PCWrapper> pc_map = new HashMap<String, PCWrapper>();
+	private HashMap<String, PCWrapper> pc_map = new HashMap<String, PCWrapper>();
+	private WebView js_runtime = null;
+	
+	public PCManager(WebView webView) {
+		this.js_runtime = webView;
+	}
 	
 	@JavascriptInterface
 	public void add_pc(String pc_id) {
@@ -22,15 +28,16 @@ public class PCManager {
 		pc_map.remove(pc_id);
 	}
 	
-//	@JavascriptInterface
-//	public void add_stream(String pc_id, JSONObject obj) {
-//		PCWrapper pc_wrapper = pc_map.get(pc_id);
-//		String param = obj.toString();
-//		try {
-//			JSONObject res = new JSONObject(param);
-//		} catch (JSONException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//	}
+	@JavascriptInterface
+	public void add_stream(String pc_id, JSONObject obj) {		 
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+		String param = obj.toString();
+		js_runtime.loadUrl("javascript:androidPCMangerEvent.test("+ pc_id + "," + param +")");
+		try {
+			JSONObject res = new JSONObject(param);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 }
