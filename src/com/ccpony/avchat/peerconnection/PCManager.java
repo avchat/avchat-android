@@ -10,7 +10,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
 public class PCManager {
-	private HashMap<String, PCWrapper> pc_map = new HashMap<String, PCWrapper>();
+	private HashMap<Integer, PCWrapper> pc_map = new HashMap<Integer, PCWrapper>();
 	private WebView js_runtime = null;
 	
 	public PCManager(WebView webView) {
@@ -18,48 +18,133 @@ public class PCManager {
 	}
 		
 	@JavascriptInterface
-	public void new_pc(String pc_id) {
+	public void new_pc(int pc_id) {
 		PCWrapper pc_wrapper = new PCWrapper(null, null);
 		pc_map.put(pc_id, pc_wrapper);
 	}
 	
 	@JavascriptInterface
-	public void delete_pc(String pc_id) {
+	public void delete_pc(int pc_id) {
 		pc_map.remove(pc_id);
 	}
 	
 	// peer connection functions
-	@JavascriptInterface
-	public void add_stream(String pc_id, JSONObject obj) {		 
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-		String param = obj.toString();
-		js_runtime.loadUrl("javascript:androidPCMangerEvent.test("+ pc_id + "," + param +")");
+	@JavascriptInterface 
+	public void addStream(int pc_id, String stream) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);		
 		try {
-			JSONObject res = new JSONObject(param);
+			JSONObject json = new JSONObject(stream);
 		} catch (JSONException e) {			
 			e.printStackTrace();
 		}
 	}
+
+	@JavascriptInterface 
+	public void removeStream(int pc_id, String stream) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
+
+	@JavascriptInterface 
+	public void close(int pc_id) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
+
+	@JavascriptInterface 
+	public void createOffer(int pc_id, String constraints) {	
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
 	
+	@JavascriptInterface 
+	public void createAnswer(int pc_id, String constraints) {	
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
+
+	@JavascriptInterface 
+	public void setLocalDescription(int pc_id, String sd) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
+
+	@JavascriptInterface 
+	public void setRemoteDescription(int pc_id, String sd) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
+
+	@JavascriptInterface 
+	public void createDataChannel(int pc_id, String param) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
+
+	@JavascriptInterface 
+	public void updateIce(int pc_id, String param) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	};
+
+	@JavascriptInterface 
+	public void addIceCandidate(int pc_id, String ice) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
+
+	@JavascriptInterface 
+	public void getStats(int pc_id) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+	}
+
+	// cb_xxx
+	@JavascriptInterface 
+	public void cb_createOffer(int pc_id, JSONObject offer) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onSignalingChange()");	
+	}
+
+	@JavascriptInterface 
+	public void cb_createAnswer(int pc_id, JSONObject answer) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onSignalingChange()");	
+	}
+
+	// onxxx
+	@JavascriptInterface 
+	public void onSignalingChange(int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onSignalingChange()");
+	}
+
+	@JavascriptInterface 
+	public void onIceConnectionChange(int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onIceConnectionChange()");
+	}
+
+	@JavascriptInterface 
+	public void onIceGatheringChange(int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onIceGatheringChange()");
+	}
+
+	@JavascriptInterface 
+	public void onIceCandidate(int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onIceCandidate()");
+	}
+
+	@JavascriptInterface 
+	public void onError(int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onError()");
+	}
+
+	@JavascriptInterface 
+	public void onAddStream(int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onAddStream()");
+	}
+
+	@JavascriptInterface 
+	public void onRemoveStream(int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onRemoveStream()");
+	}
+
+	@JavascriptInterface 
+	public void onDataChannel(int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS.onDataChannel()");
+	}
+		
 	// stream functions
 	@JavascriptInterface 
-	public void mediastream_add_track(String track_str) {
-		
-	}
-	
-	@JavascriptInterface 
-	public void mediastream_remove_track(String track_str) {
-		
-	}
-	
-	// track functions
-	@JavascriptInterface 
-	public void videotrack_add_render(String renderer_str) {
-		
-	}
-	
-	@JavascriptInterface 
-	public void videotrack_remove_render(String renderer_str) {
-		
-	}
+	public void mediastream_stop(int pc_id) {
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
+		//pc_wrapper.stop();
+	}	
 }
