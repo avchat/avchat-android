@@ -16,129 +16,62 @@ public class PCManager {
 	public PCManager(WebView webView) {
 		this.js_runtime = webView;
 	}
-		
+
 	@JavascriptInterface
-	public void new_pc(int pc_id) {
-		PCWrapper pc_wrapper = new PCWrapper(null, null);
-		pc_map.put(pc_id, pc_wrapper);
-	}
-	
-	@JavascriptInterface
-	public void delete_pc(int pc_id) {
-		pc_map.remove(pc_id);
-	}
-	
-	// peer connection functions
-	@JavascriptInterface 
-	public void addStream(int pc_id, String stream) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);		
+	public String call_method(int method, int pc_id, String param_str) {
+		JSONObject res = null;
+		PCWrapper pc_wrapper = pc_map.get(pc_id);	
+		JSONObject json = null;
 		try {
-			JSONObject json = new JSONObject(stream);
-		} catch (JSONException e) {			
+			json = new JSONObject(param_str);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-
-	@JavascriptInterface 
-	public void removeStream(int pc_id, String stream) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	}
-
-	@JavascriptInterface 
-	public void close(int pc_id) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	}
-
-	@JavascriptInterface 
-	public void createOffer(int pc_id, String constraints) {	
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
+		switch(method) {
+		case 1: // new_pc
+			pc_wrapper = new PCWrapper(null, null);
+			pc_map.put(pc_id, pc_wrapper);
+			break;
+		case 2: // addStream
+			//res = pc_wrapper.addStream(json);	 
+			break;
+		case 3: // removeStream
+			//res = pc_wrapper.removeStream(json);
+			break;
+		case 4: // close
+			//res = pc_wrapper.close();
+			break;
+		case 5: // createAnswer
+			//res = pc_wrapper.createAnswer(json);
+			break;
+		case 6: // createOffer
+			//res = pc_wrapper.createOffer(json);
+			break;
+		case 7: // createDataChannel
+			//res = pc_wrapper.createDataChannel(json);
+			break;
+		case 8: // setLocalDescription
+			//res = pc_wrapper.setLocalDescription(json);
+			break;
+		case 9: // setRemoteDescription
+			//res = pc_wrapper.setRemoteDescription(json);
+			break;
+		case 10: // updateIce
+			//res = pc_wrapper.updateIce(json);
+			break;
+		case 11: // addIceCandidate
+			//res = pc_wrapper.addIceCandidate(json);
+			break;
+		case 12: // getStats
+			//res = pc_wrapper.getStats(json);
+			break;
+		}
+		return res.toString();
 	}
 	
-	@JavascriptInterface 
-	public void createAnswer(int pc_id, String constraints) {	
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	}
-
-	@JavascriptInterface 
-	public void setLocalDescription(int pc_id, String sd) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	}
-
-	@JavascriptInterface 
-	public void setRemoteDescription(int pc_id, String sd) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	}
-
-	@JavascriptInterface 
-	public void createDataChannel(int pc_id, String param) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	}
-
-	@JavascriptInterface 
-	public void updateIce(int pc_id, String param) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	};
-
-	@JavascriptInterface 
-	public void addIceCandidate(int pc_id, String ice) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	}
-
-	@JavascriptInterface 
-	public void getStats(int pc_id) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-	}
-
-	// cb_xxx
-	@JavascriptInterface 
-	public void cb_createOffer(int pc_id, JSONObject offer) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onSignalingChange()");	
-	}
-
-	@JavascriptInterface 
-	public void cb_createAnswer(int pc_id, JSONObject answer) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onSignalingChange()");	
-	}
-
-	// onxxx
-	@JavascriptInterface 
-	public void onSignalingChange(int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onSignalingChange()");
-	}
-
-	@JavascriptInterface 
-	public void onIceConnectionChange(int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onIceConnectionChange()");
-	}
-
-	@JavascriptInterface 
-	public void onIceGatheringChange(int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onIceGatheringChange()");
-	}
-
-	@JavascriptInterface 
-	public void onIceCandidate(int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onIceCandidate()");
-	}
-
-	@JavascriptInterface 
-	public void onError(int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onError()");
-	}
-
-	@JavascriptInterface 
-	public void onAddStream(int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onAddStream()");
-	}
-
-	@JavascriptInterface 
-	public void onRemoveStream(int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onRemoveStream()");
-	}
-
-	@JavascriptInterface 
-	public void onDataChannel(int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcMangerJS.onDataChannel()");
+	public void cb_method(String method, int pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcMangerJS."+ method + "," + pc_id + "," + param.toString() + ")");
 	}
 		
 	// stream functions

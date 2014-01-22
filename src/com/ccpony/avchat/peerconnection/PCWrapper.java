@@ -12,18 +12,15 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
-import org.webrtc.StatsObserver;
-import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
-import org.webrtc.VideoSource;
 import org.webrtc.VideoRenderer.I420Frame;
+import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
 import android.app.Activity;
 import android.graphics.Point;
 import android.util.Log;
-import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.Toast;
 
@@ -44,6 +41,10 @@ public class PCWrapper {
 	public MediaConstraints pcConstraints;
 	public MediaConstraints videoConstraints;
 	List<PeerConnection.IceServer> iceServers = null;
+	
+	PCManager pcManager = null;
+	int pc_id = 0;
+	JSONObject param = null;
 
 	public PCWrapper(WebView js_runtime, Activity activity) {
 		this.js_runtime = js_runtime;
@@ -53,19 +54,6 @@ public class PCWrapper {
 		activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
 		vsv = new VideoStreamsView(activity, displaySize);
 		activity.setContentView(vsv);
-	}
-
-	public void onicecandidate(String param1) {
-		js_runtime.loadUrl("javascript:peerconnection.onicecandidate(" + param1
-				+ ")");
-	}
-
-	public void cb_createOffer() {
-		js_runtime.loadUrl("javascript:peerconnection.cb_createOffer()");
-	}
-
-	public void cb_createAnswer() {
-		js_runtime.loadUrl("javascript:peerconnection.cb_createAnswer()");
 	}
 
 	// Log |msg| and Toast about it.
@@ -85,39 +73,13 @@ public class PCWrapper {
 		} catch (JSONException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	private VideoCapturer getVideoCapturer() {
-		String[] cameraFacing = { "front", "back" };
-		int[] cameraIndex = { 0, 1 };
-		int[] cameraOrientation = { 0, 90, 180, 270 };
-		
-		for (String facing : cameraFacing) {
-			for (int index : cameraIndex) {
-				for (int orientation : cameraOrientation) {
-					String name = "Camera " + index + ", Facing " + facing
-							+ ", Orientation " + orientation;
-					VideoCapturer capturer = VideoCapturer.create(name);
-					if (capturer != null) {
-						logAndToast("Using camera: " + name);
-						return capturer;
-					}
-				}
-			}
-		}
-		throw new RuntimeException("Failed to open capturer");
-	}
+	}	
 
 	// Poor-man's assert(): die with |msg| unless |condition| is true.
 	private static void abortUnless(boolean condition, String msg) {
 		if (!condition) {
 			throw new RuntimeException(msg);
 		}
-	}
-
-	// Send |json| to the underlying AppEngine Channel.
-	private void sendMessage(JSONObject json) {
-
 	}
 
 	// Implementation detail: bridge the VideoRenderer.Callbacks interface to
@@ -158,33 +120,35 @@ public class PCWrapper {
 			jsonPut(json, "label", candidate.sdpMLineIndex);
 			jsonPut(json, "id", candidate.sdpMid);
 			jsonPut(json, "candidate", candidate.sdp);
-			sendMessage(json);
+			
+			pcManager.cb_method("onIceCandidate", pc_id, param);
 		}
 
 		@Override
 		public void onError() {
-			throw new RuntimeException("PeerConnection error!");
+			pcManager.cb_method("onError", pc_id, param);
 		}
 
 		@Override
 		public void onSignalingChange(PeerConnection.SignalingState newState) {
+			pcManager.cb_method("onSignalingChange", pc_id, param);
 		}
 
 		@Override
 		public void onIceConnectionChange(
 				PeerConnection.IceConnectionState newState) {
-			js_runtime
-					.loadUrl("javascript:peerconnection.oniceconnectionstatechange()");
+			pcManager.cb_method("onIceConnectionChange", pc_id, param);
 		}
 
 		@Override
 		public void onIceGatheringChange(
 				PeerConnection.IceGatheringState newState) {
+			pcManager.cb_method("onIceGatheringChange", pc_id, param);
 		}
 
 		@Override
 		public void onAddStream(final MediaStream stream) {
-			js_runtime.loadUrl("javascript:peerconnection.onaddstream()");
+
 			abortUnless(
 					stream.audioTracks.size() <= 1
 							&& stream.videoTracks.size() <= 1,
@@ -194,16 +158,23 @@ public class PCWrapper {
 						new VideoRenderer(new VideoCallbacks(vsv,
 								VideoStreamsView.Endpoint.REMOTE)));
 			}
+			
+			pcManager.cb_method("onAddStream", pc_id, param);
 		}
 
 		@Override
 		public void onRemoveStream(final MediaStream stream) {
-			js_runtime.loadUrl("javascript:peerconnection.onremovestream()");
+
 			stream.videoTracks.get(0).dispose();
+			
+			pcManager.cb_method("onRemoveStream", pc_id, param);
 		}
 
 		@Override
 		public void onDataChannel(final DataChannel dc) {
+
+			pcManager.cb_method("onDataChannel", pc_id, param);
+			
 			throw new RuntimeException(
 					"AppRTC doesn't use data channels, but got: " + dc.label()
 							+ " anyway!");
@@ -216,6 +187,8 @@ public class PCWrapper {
 	private class SDPObserver implements SdpObserver {
 		@Override
 		public void onCreateSuccess(final SessionDescription origSdp) {
+			// pcManager.cb_method("cb_createOffer", pc_id, param);
+			// pcManager.cb_method("cb_createAnswer", pc_id, param);
 		}
 
 		@Override
@@ -243,34 +216,32 @@ public class PCWrapper {
 		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
 				"RtpDataChannels", "true"));
 
-		
 		pc = factory
 				.createPeerConnection(iceServers, pcConstraints, pcObserver);
 
 		final PeerConnection finalPC = pc;
-		final Runnable repeatedStatsLogger = new Runnable() {
-			public void run() {
-				synchronized (quit[0]) {
-					if (quit[0]) {
-						return;
-					}
-					final Runnable runnableThis = this;
-					boolean success = finalPC.getStats(new StatsObserver() {
-						public void onComplete(StatsReport[] reports) {
-							for (StatsReport report : reports) {
-								Log.d(TAG, "Stats: " + report.toString());
-							}
-							vsv.postDelayed(runnableThis, 10000);
-						}
-					}, null);
-					if (!success) {
-						throw new RuntimeException(
-								"getStats() return false!");
+		
+	}
+
+	private VideoCapturer getVideoCapturer() {
+		String[] cameraFacing = { "front", "back" };
+		int[] cameraIndex = { 0, 1 };
+		int[] cameraOrientation = { 0, 90, 180, 270 };
+
+		for (String facing : cameraFacing) {
+			for (int index : cameraIndex) {
+				for (int orientation : cameraOrientation) {
+					String name = "Camera " + index + ", Facing " + facing
+							+ ", Orientation " + orientation;
+					VideoCapturer capturer = VideoCapturer.create(name);
+					if (capturer != null) {
+						logAndToast("Using camera: " + name);
+						return capturer;
 					}
 				}
 			}
-		};
-		vsv.postDelayed(repeatedStatsLogger, 10000);		
+		}
+		throw new RuntimeException("Failed to open capturer");
 	}
 	
 	public void getusermedia() {
@@ -286,65 +257,44 @@ public class PCWrapper {
 		lMS.addTrack(factory.createAudioTrack("ARDAMSa0"));
 		pc.addStream(lMS, new MediaConstraints());
 	}
+
+	public void addStream() {
+
+	}
 	
-	public void create_player() {
-		
+	public void removeStream() {
+
 	}
 
-	@JavascriptInterface
+	public void close() {
+
+	}
+
+	public void createOffer() {
+
+	}
+	
+	public void createAnswer() {
+
+	}
+
+	public void createDataChannel() {
+
+	}
+
+	public void setLocalDescription() {
+
+	}
+
+	public void setRemoteDescription() {
+
+	}
+
+	public void updateIce() {
+
+	}
+	
 	public void addIceCandidate() {
 
-	}
-
-	@JavascriptInterface
-	public void addStream() {
-	}
-
-	@JavascriptInterface
-	public void close() {
-	}
-
-	@JavascriptInterface
-	public void createAnswer() {
-	}
-
-	@JavascriptInterface
-	public void createDataChannel() {
-	}
-
-	@JavascriptInterface
-	public void createOffer() {
-	}
-
-	@JavascriptInterface
-	public void getLocalStreams() {
-	}
-
-	@JavascriptInterface
-	public void getRemoteStreams() {
-	}
-
-	@JavascriptInterface
-	public void getStats() {
-	}
-
-	@JavascriptInterface
-	public void getStreamById() {
-	}
-
-	@JavascriptInterface
-	public void removeStream() {
-	}
-
-	@JavascriptInterface
-	public void setLocalDescription() {
-	}
-
-	@JavascriptInterface
-	public void setRemoteDescription() {
-	}
-
-	@JavascriptInterface
-	public void updateIce() {
 	}
 }
