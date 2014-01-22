@@ -21,7 +21,7 @@ public class JSController {
 		js_runtime.getSettings().setJavaScriptEnabled(true);	
 		
 		js_runtime.addJavascriptInterface(playerManager, "playerManager");
-		js_runtime.addJavascriptInterface(pcManager, "pcManager");
+		js_runtime.addJavascriptInterface(pcManager, "pcManagerProxy");
 		js_runtime.addJavascriptInterface(viewManager, "viewManager");
 		js_runtime.addJavascriptInterface(avDeviceManager, "avDeviceManager");
 		
@@ -36,7 +36,7 @@ public class JSController {
 		
 		js_runtime.removeJavascriptInterface("avDeviceManager");
 		js_runtime.removeJavascriptInterface("viewManager");
-		js_runtime.removeJavascriptInterface("pcManager");
+		js_runtime.removeJavascriptInterface("pcManagerProxy");
 		js_runtime.removeJavascriptInterface("playerManager");
 		
 		js_runtime.getSettings().setJavaScriptEnabled(false);
