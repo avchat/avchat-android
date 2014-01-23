@@ -341,7 +341,7 @@ public class PCWrapper {
 			lms.addTrack(videoTrack);
 			lms.addTrack(factory.createAudioTrack("ARDAMSa0"));
 		}
-		pcManager.cb_method("cb_getusermedia", 0, param);
+		pcManager.cb_method("cb_getUserMedia", 0, param);
 
 		return res;
 	}
