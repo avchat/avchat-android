@@ -6,19 +6,19 @@ import android.webkit.WebView;
 import com.ccpony.avchat.peerconnection.PCManager;
 
 public class JSController {
-	private Activity activity = null;
 	private WebView	js_runtime = null;		 
-	private PCManager pcManager = null;
 	
 	public JSController(Activity activity) {
-		this.activity = activity;
-		js_runtime = new WebView(this.activity);
-		js_runtime.getSettings().setJavaScriptEnabled(true);
-		pcManager = new PCManager(js_runtime);		
-		js_runtime.addJavascriptInterface(pcManager, "pcManagerProxy");
+		js_runtime = new WebView(activity);
+		js_runtime.getSettings().setJavaScriptEnabled(true);		
 	}
 	
-	public void start(String js_controller_url) {
+	public WebView get_webView() {
+		return js_runtime;
+	}
+	
+	public void start(String js_controller_url, PCManager pcManager) {
+		js_runtime.addJavascriptInterface(pcManager, "pcManagerProxy");
 		js_runtime.loadUrl(js_controller_url);
 	}
 	

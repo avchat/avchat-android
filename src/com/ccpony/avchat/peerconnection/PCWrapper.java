@@ -19,7 +19,6 @@ import org.webrtc.VideoTrack;
 
 import android.app.Activity;
 import android.graphics.Point;
-import android.webkit.JavascriptInterface;
 import android.widget.LinearLayout;
 
 import com.ccpony.avchat.player.VideoPlayer;
@@ -42,18 +41,33 @@ public class PCWrapper {
 	private VideoTrack videoTrack = null;
 	private VideoSource videoSource = null;
 	private VideoCapturer capturer = null;
-	private VideoStreamsView vsv = null;
 	
+	LinearLayout line_layout = new LinearLayout(activity);	
+	HashMap<String, VideoStreamsView> view_map = new HashMap<String, VideoStreamsView>();	
+	HashMap<String, VideoPlayer> player_map = new HashMap<String, VideoPlayer>();
 
-	public PCWrapper(Activity activity) {
+	/**
+	 * 构造函数
+	 * @param activity
+	 * @param pcManager
+	 */
+	public PCWrapper(Activity activity, PCManager pcManager) {
 		this.activity = activity;
+		this.pcManager = pcManager;
+		
+		factory = new PeerConnectionFactory();
+		
+		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
+				"RtpDataChannels", "true"));
 
-		Point displaySize = new Point();
-		activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
-		vsv = new VideoStreamsView(activity, displaySize);
-		activity.setContentView(vsv);
+		pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);	
 	}
 
+	/**
+	 * PCObserver是peerconnection的事件回调类
+	 * @author pony
+	 *
+	 */
 	private class PCObserver implements PeerConnection.Observer {
 		@Override
 		public void onIceCandidate(final IceCandidate candidate) {
@@ -122,9 +136,11 @@ public class PCWrapper {
 		}
 	}
 	  
-	// Implementation detail: handle offer creation/signaling and answer
-	// setting,
-	// as well as adding remote ICE candidates once the answer SDP is set.
+	/**
+	 * SDPObserver是set{Local,Remote}Description()和create{Offer,Answer}()的事件回调类
+	 * @author pony
+	 *
+	 */
 	private class SDPObserver implements SdpObserver {
 		@Override
 		public void onCreateSuccess(final SessionDescription origSdp) {
@@ -158,21 +174,22 @@ public class PCWrapper {
 		}
 	}
 
-	public void create_pc() {
-		factory = new PeerConnectionFactory();
-		
-		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
-				"RtpDataChannels", "true"));
-
-		pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);				
-	}
-
+	/**
+	 * 增加本地流
+	 * @param param
+	 * @return
+	 */
 	public JSONObject addStream(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.addStream(localMediaStream, new MediaConstraints());
 		return res;
 	}
 	
+	/**
+	 * 移除本地流
+	 * @param param
+	 * @return
+	 */
 	public JSONObject removeStream(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.removeStream(localMediaStream);
@@ -180,6 +197,11 @@ public class PCWrapper {
 		return res;
 	}
 
+	/**
+	 * 关闭peerconneciton
+	 * @param param
+	 * @return
+	 */
 	public JSONObject close(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.close();
@@ -187,6 +209,11 @@ public class PCWrapper {
 		return res;
 	}
 
+	/**
+	 * 创建Offer SDP
+	 * @param param
+	 * @return
+	 */
 	public JSONObject createOffer(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.createOffer(sdpObserver, videoConstraints);
@@ -194,6 +221,11 @@ public class PCWrapper {
 		return res;
 	}
 	
+	/**
+	 * 创建Answer SDP
+	 * @param param
+	 * @return
+	 */
 	public JSONObject createAnswer(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.createAnswer(sdpObserver, videoConstraints);
@@ -201,6 +233,11 @@ public class PCWrapper {
 		return res;
 	}
 
+	/**
+	 * 创建数据通道
+	 * @param param
+	 * @return
+	 */
 	public JSONObject createDataChannel(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.createDataChannel(null, null);
@@ -208,6 +245,11 @@ public class PCWrapper {
 		return res;
 	}
 
+	/**
+	 * 设置本地描述信息
+	 * @param param
+	 * @return
+	 */
 	public JSONObject setLocalDescription(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.setLocalDescription(sdpObserver, null);
@@ -215,6 +257,11 @@ public class PCWrapper {
 		return res;
 	}
 
+	/**
+	 * 设置远端描述信息
+	 * @param param
+	 * @return
+	 */
 	public JSONObject setRemoteDescription(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.setRemoteDescription(sdpObserver, null);
@@ -222,6 +269,11 @@ public class PCWrapper {
 		return res;
 	}
 
+	/**
+	 * 更新ICE server列表
+	 * @param param
+	 * @return
+	 */
 	public JSONObject updateIce(JSONObject param) {
 		JSONObject res = new JSONObject();
 		pc.updateIce(iceServers, videoConstraints);
@@ -229,6 +281,11 @@ public class PCWrapper {
 		return res;
 	}
 	
+	/**
+	 * 增加新的ICE候选点
+	 * @param param
+	 * @return
+	 */
 	public JSONObject addIceCandidate(JSONObject param) {
 		JSONObject res = new JSONObject();
 		IceCandidate ice = null;
@@ -237,24 +294,33 @@ public class PCWrapper {
 		return res;
 	}
 	
+	/**
+	 * 获取统计信息
+	 * @param param
+	 * @return
+	 */
 	public JSONObject getStats(JSONObject param) {
 		JSONObject res = new JSONObject();
 
 		return res;
 	}	
 	
-	// stream functions
-	@JavascriptInterface 
+	/**
+	 * 停止本地媒体流
+	 * @param param
+	 * @return
+	 */
 	public JSONObject mediastream_stop(JSONObject param) {
 		JSONObject res = new JSONObject();
 
 		return res;
 	}
 	
-	// player functions 
-	HashMap<String, VideoPlayer> player_map = new HashMap<String, VideoPlayer>();
-	
-	@JavascriptInterface
+	/**
+	 * 创建新的视频播放器
+	 * @param param
+	 * @return
+	 */
 	public JSONObject new_player(JSONObject param) {
 		JSONObject res = new JSONObject();
 		VideoPlayer view_player = new VideoPlayer(null);
@@ -263,7 +329,11 @@ public class PCWrapper {
 		return res;
 	}
 	
-	@JavascriptInterface
+	/**
+	 * 删除视频播放器
+	 * @param param
+	 * @return
+	 */
 	public JSONObject delete_player(JSONObject param) {
 		JSONObject res = new JSONObject();
 		player_map.get(null);
@@ -271,11 +341,11 @@ public class PCWrapper {
 		return res;
 	}
 	
-	// view functions
-	HashMap<String, VideoStreamsView> view_map = new HashMap<String, VideoStreamsView>();
-	LinearLayout line_layout = new LinearLayout(activity);	
-	
-	@JavascriptInterface
+	/**
+	 * 创建新的UI视图
+	 * @param param
+	 * @return
+	 */
 	public JSONObject new_view(JSONObject param) {
 		JSONObject res = new JSONObject();
 		String view_id = null;
@@ -289,7 +359,11 @@ public class PCWrapper {
 		return res;
 	}
 
-	@JavascriptInterface
+	/**
+	 * 删除一个UI视图
+	 * @param param
+	 * @return
+	 */
 	public JSONObject delete_view(JSONObject param) {
 		JSONObject res = new JSONObject();
 		String view_id = null;
@@ -299,8 +373,11 @@ public class PCWrapper {
 		return res;
 	}
 	
-	// av device functions	
-	@JavascriptInterface
+	/**
+	 * 创建本地流
+	 * @param param
+	 * @return
+	 */
 	public JSONObject get_user_media(JSONObject param) {		
 		JSONObject res = new JSONObject();
 		if(localMediaStream == null) {
@@ -319,6 +396,10 @@ public class PCWrapper {
 		return res;
 	}
 	
+	/**
+	 * 私有方法，主要打开本地camera设备
+	 * @return
+	 */
 	private VideoCapturer getVideoCapturer() {
 		String[] cameraFacing = { "front", "back" };
 		int[] cameraIndex = { 0, 1 };

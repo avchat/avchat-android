@@ -5,15 +5,18 @@ import java.util.HashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Activity;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
 public class PCManager {
 	private HashMap<Integer, PCWrapper> pc_map = new HashMap<Integer, PCWrapper>();
 	private WebView js_runtime = null;
+	private Activity activity = null;
 	
-	public PCManager(WebView webView) {
+	public PCManager(WebView webView, Activity activity) {
 		this.js_runtime = webView;
+		this.activity = activity;
 	}
 
 	@JavascriptInterface
@@ -28,7 +31,7 @@ public class PCManager {
 		}
 		switch(method) {
 		case 1: // new_pc
-			pc_wrapper = new PCWrapper(null);
+			pc_wrapper = new PCWrapper(activity, this);
 			pc_map.put(pc_id, pc_wrapper);
 			break;
 		case 2: // addStream
