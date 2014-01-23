@@ -4,10 +4,22 @@ import java.util.HashMap;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.webrtc.MediaConstraints;
+import org.webrtc.MediaStream;
+import org.webrtc.PeerConnectionFactory;
+import org.webrtc.VideoCapturer;
+import org.webrtc.VideoSource;
+import org.webrtc.VideoTrack;
 
+import com.ccpony.avchat.player.VideoPlayer;
+import com.ccpony.avchat.view.VideoStreamsView;
+
+import android.app.Activity;
+import android.graphics.Point;
 import android.util.JsonReader;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import android.widget.LinearLayout;
 
 public class PCManager {
 	private HashMap<Integer, PCWrapper> pc_map = new HashMap<Integer, PCWrapper>();
@@ -66,6 +78,24 @@ public class PCManager {
 		case 12: // getStats
 			//res = pc_wrapper.getStats(json);
 			break;
+		case 13: // mediastream_stop
+			//res = pc_wrapper.mediastream_stop(json);
+			break;
+		case 14: // new_player
+			//res = pc_wrapper.new_player(json);
+			break;
+		case 15: // delete_player
+			//res = pc_wrapper.delete_player(json);
+			break;
+		case 16: // new_view 
+			//res = pc_wrapper.new_view(json);
+			break;
+		case 17: // delete_view
+			//res = pc_wrapper.delete_view(json);
+			break;
+		case 18: // get_user_media
+			//res = pc_wrapper.get_user_media(json);
+			break;
 		}
 		return res.toString();
 	}
@@ -73,11 +103,4 @@ public class PCManager {
 	public void cb_method(String method, int pc_id, JSONObject param) {
 		js_runtime.loadUrl("javascript:pcMangerJS."+ method + "," + pc_id + "," + param.toString() + ")");
 	}
-		
-	// stream functions
-	@JavascriptInterface 
-	public void mediastream_stop(int pc_id) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
-		//pc_wrapper.stop();
-	}	
 }

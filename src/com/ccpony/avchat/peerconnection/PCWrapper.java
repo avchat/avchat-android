@@ -1,5 +1,6 @@
 package com.ccpony.avchat.peerconnection;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.json.JSONException;
@@ -12,14 +13,19 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
+import org.webrtc.VideoCapturer;
 import org.webrtc.VideoSource;
+import org.webrtc.VideoTrack;
 
 import android.app.Activity;
 import android.graphics.Point;
 import android.util.Log;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.ccpony.avchat.player.VideoPlayer;
 import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCWrapper {
@@ -228,4 +234,84 @@ public class PCWrapper {
 	public void addIceCandidate(IceCandidate ice) {
 		pc.addIceCandidate(ice);
 	}
+	
+	// stream functions
+	@JavascriptInterface 
+	public void mediastream_stop(int pc_id) {
+		
+	}
+	
+	// player functions 
+	HashMap<String, VideoPlayer> player_map = new HashMap<String, VideoPlayer>();
+	
+	@JavascriptInterface
+	public void new_player() {
+		VideoPlayer view_player = new VideoPlayer(null);
+		player_map.put(null, view_player);
+	}
+	
+	@JavascriptInterface
+	public void delete_player() {		
+		player_map.get(null);
+	}
+	
+	// view functions
+	HashMap<String, VideoStreamsView> view_map = new HashMap<String, VideoStreamsView>();
+	LinearLayout line_layout = new LinearLayout(activity);	
+	
+	@JavascriptInterface
+	public void new_view(String view_id, int width, int height) {
+		Point displaySize = new Point(width, height);		
+		VideoStreamsView vsv = new VideoStreamsView(activity, displaySize);
+		view_map.put(view_id, vsv);
+		line_layout.addView(vsv);
+	}
+
+	@JavascriptInterface
+	public void delete_view(String view_id) {
+		VideoStreamsView vsv = view_map.get(view_id);
+		line_layout.removeView(vsv);
+	}
+	
+	// av device functions
+	public VideoTrack videoTrack;
+	
+	@JavascriptInterface
+	public void get_user_media() {
+		logAndToast("Creating local video source...");
+		MediaStream lMS = factory.createLocalMediaStream("ARDAMS");
+		VideoCapturer capturer = getVideoCapturer();
+		videoSource = factory.createVideoSource(capturer, videoConstraints);
+		videoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
+		
+		lMS.addTrack(videoTrack);
+		lMS.addTrack(factory.createAudioTrack("ARDAMSa0"));
+		
+		// result return
+		// if ok;
+		js_runtime.loadUrl("javascript:avDeviceManager.callback()");
+		// else
+		js_runtime.loadUrl("javascript:avDeviceManager.error()");
+	}
+	
+	private VideoCapturer getVideoCapturer() {
+		String[] cameraFacing = { "front", "back" };
+		int[] cameraIndex = { 0, 1 };
+		int[] cameraOrientation = { 0, 90, 180, 270 };
+
+		for (String facing : cameraFacing) {
+			for (int index : cameraIndex) {
+				for (int orientation : cameraOrientation) {
+					String name = "Camera " + index + ", Facing " + facing
+							+ ", Orientation " + orientation;
+					VideoCapturer capturer = VideoCapturer.create(name);
+					if (capturer != null) {
+						logAndToast("Using camera: " + name);
+						return capturer;
+					}
+				}
+			}
+		}
+		throw new RuntimeException("Failed to open capturer");
+	}	
 }

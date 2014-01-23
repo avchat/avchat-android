@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.Menu;
 
 public class MainActivity extends Activity {
-	private JSController js_controller = new JSController();
+	private JSController js_controller = new JSController(this);
 	private String	js_controller_url = "http://192.168.1.201:3001/index.html";
 
 	@Override
@@ -13,7 +13,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		js_controller.start(this, js_controller_url);
+		js_controller.start(js_controller_url);
 	}
 	
 	@Override
