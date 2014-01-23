@@ -29,7 +29,6 @@ import com.ccpony.avchat.player.VideoPlayer;
 import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCWrapper {
-	private WebView js_runtime = null;
 	private Activity activity = null;
 	private static final String TAG = "PCWrapper";
 	private Toast logToast;
@@ -49,8 +48,7 @@ public class PCWrapper {
 	JSONObject param = null;
 	MediaStream lms;
 
-	public PCWrapper(WebView js_runtime, Activity activity) {
-		this.js_runtime = js_runtime;
+	public PCWrapper(Activity activity) {
 		this.activity = activity;
 
 		Point displaySize = new Point();
@@ -195,64 +193,108 @@ public class PCWrapper {
 		pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);				
 	}
 
-	public void addStream() {
+	public JSONObject addStream(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.addStream(lms, new MediaConstraints());
+		return res;
 	}
 	
-	public void removeStream() {
+	public JSONObject removeStream(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.removeStream(lms);
+		
+		return res;
 	}
 
-	public void close() {
+	public JSONObject close(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.close();
+		
+		return res;
 	}
 
-	public void createOffer() {
+	public JSONObject createOffer(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.createOffer(sdpObserver, videoConstraints);
+
+		return res;
 	}
 	
-	public void createAnswer() {
+	public JSONObject createAnswer(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.createAnswer(sdpObserver, videoConstraints);
+
+		return res;
 	}
 
-	public void createDataChannel() {
+	public JSONObject createDataChannel(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.createDataChannel(null, null);
+
+		return res;
 	}
 
-	public void setLocalDescription() {
+	public JSONObject setLocalDescription(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.setLocalDescription(sdpObserver, null);
+
+		return res;
 	}
 
-	public void setRemoteDescription() {
+	public JSONObject setRemoteDescription(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.setRemoteDescription(sdpObserver, null);
+
+		return res;
 	}
 
-	public void updateIce() {
+	public JSONObject updateIce(JSONObject param) {
+		JSONObject res = new JSONObject();
 		pc.updateIce(iceServers, videoConstraints);
+
+		return res;
 	}
 	
-	public void addIceCandidate(IceCandidate ice) {
+	public JSONObject addIceCandidate(JSONObject param) {
+		JSONObject res = new JSONObject();
+		IceCandidate ice = null;
 		pc.addIceCandidate(ice);
+
+		return res;
 	}
+	
+	public JSONObject getStats(JSONObject param) {
+		JSONObject res = new JSONObject();
+
+		return res;
+	}	
 	
 	// stream functions
 	@JavascriptInterface 
-	public void mediastream_stop(int pc_id) {
-		
+	public JSONObject mediastream_stop(JSONObject param) {
+		JSONObject res = new JSONObject();
+
+		return res;
 	}
 	
 	// player functions 
 	HashMap<String, VideoPlayer> player_map = new HashMap<String, VideoPlayer>();
 	
 	@JavascriptInterface
-	public void new_player() {
+	public JSONObject new_player(JSONObject param) {
+		JSONObject res = new JSONObject();
 		VideoPlayer view_player = new VideoPlayer(null);
 		player_map.put(null, view_player);
+
+		return res;
 	}
 	
 	@JavascriptInterface
-	public void delete_player() {		
+	public JSONObject delete_player(JSONObject param) {
+		JSONObject res = new JSONObject();
 		player_map.get(null);
+
+		return res;
 	}
 	
 	// view functions
@@ -260,38 +302,48 @@ public class PCWrapper {
 	LinearLayout line_layout = new LinearLayout(activity);	
 	
 	@JavascriptInterface
-	public void new_view(String view_id, int width, int height) {
+	public JSONObject new_view(JSONObject param) {
+		JSONObject res = new JSONObject();
+		String view_id = null;
+		int width = 0;
+		int height = 0;
 		Point displaySize = new Point(width, height);		
 		VideoStreamsView vsv = new VideoStreamsView(activity, displaySize);
 		view_map.put(view_id, vsv);
 		line_layout.addView(vsv);
+
+		return res;
 	}
 
 	@JavascriptInterface
-	public void delete_view(String view_id) {
+	public JSONObject delete_view(JSONObject param) {
+		JSONObject res = new JSONObject();
+		String view_id = null;
 		VideoStreamsView vsv = view_map.get(view_id);
 		line_layout.removeView(vsv);
+
+		return res;
 	}
 	
 	// av device functions
 	public VideoTrack videoTrack;
 	
 	@JavascriptInterface
-	public void get_user_media() {
-		logAndToast("Creating local video source...");
-		MediaStream lMS = factory.createLocalMediaStream("ARDAMS");
-		VideoCapturer capturer = getVideoCapturer();
-		videoSource = factory.createVideoSource(capturer, videoConstraints);
-		videoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
-		
-		lMS.addTrack(videoTrack);
-		lMS.addTrack(factory.createAudioTrack("ARDAMSa0"));
-		
-		// result return
-		// if ok;
-		js_runtime.loadUrl("javascript:avDeviceManager.callback()");
-		// else
-		js_runtime.loadUrl("javascript:avDeviceManager.error()");
+	public JSONObject get_user_media(JSONObject param) {		
+		JSONObject res = new JSONObject();
+		if(lms != null) {
+			logAndToast("Creating local video source...");
+			lms = factory.createLocalMediaStream("ARDAMS");
+			VideoCapturer capturer = getVideoCapturer();
+			videoSource = factory.createVideoSource(capturer, videoConstraints);
+			videoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
+			
+			lms.addTrack(videoTrack);
+			lms.addTrack(factory.createAudioTrack("ARDAMSa0"));
+		}
+		pcManager.cb_method("cb_getusermedia", 0, param);
+
+		return res;
 	}
 	
 	private VideoCapturer getVideoCapturer() {
