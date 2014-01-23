@@ -323,8 +323,16 @@ public class PCWrapper {
 	 */
 	public JSONObject new_player(JSONObject param) {
 		JSONObject res = new JSONObject();
-		VideoPlayer view_player = new VideoPlayer(null);
-		player_map.put(null, view_player);
+		try {
+			String play_id = param.getString("play_id");
+			int view_id = param.getInt("view_id");
+			
+			VideoStreamsView vsv = view_map.get(view_id);
+			VideoPlayer view_player = new VideoPlayer(vsv);
+			player_map.put(play_id, view_player);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 
 		return res;
 	}
