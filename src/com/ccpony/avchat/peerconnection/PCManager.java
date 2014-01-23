@@ -19,7 +19,7 @@ public class PCManager {
 	@JavascriptInterface
 	public String call_method(int method, int pc_id, String param_str) {
 		JSONObject res = null;
-		PCWrapper pc_wrapper = pc_map.get(pc_id);	
+		PCWrapper pc_wrapper = pc_map.get(pc_id);
 		JSONObject param = null;
 		try {
 			param = new JSONObject(param_str);

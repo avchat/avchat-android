@@ -19,34 +19,31 @@ import org.webrtc.VideoTrack;
 
 import android.app.Activity;
 import android.graphics.Point;
-import android.util.Log;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import com.ccpony.avchat.player.VideoPlayer;
 import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCWrapper {
+	private PCManager pcManager = null;
 	private Activity activity = null;
-	private static final String TAG = "PCWrapper";
-	private Toast logToast;
-	private VideoStreamsView vsv;
-	private PeerConnectionFactory factory;
-	private PeerConnection pc;
+	
+	private int pc_id = 0;	
+	private PeerConnectionFactory factory = null;
+	private PeerConnection pc = null;	
+	private MediaConstraints pcConstraints = null;
+	private MediaConstraints videoConstraints = null;	
+	private List<PeerConnection.IceServer> iceServers = null;
 	private final PCObserver pcObserver = new PCObserver();
 	private final SDPObserver sdpObserver = new SDPObserver();
-	private final Boolean[] quit = new Boolean[] { false };
-	private VideoSource videoSource;
-	public MediaConstraints pcConstraints;
-	public MediaConstraints videoConstraints;
-	List<PeerConnection.IceServer> iceServers = null;
 	
-	PCManager pcManager = null;
-	int pc_id = 0;
-	JSONObject param = null;
-	MediaStream lms;
+	private MediaStream localMediaStream = null;
+	private VideoTrack videoTrack = null;
+	private VideoSource videoSource = null;
+	private VideoCapturer capturer = null;
+	private VideoStreamsView vsv = null;
+	
 
 	public PCWrapper(Activity activity) {
 		this.activity = activity;
@@ -57,96 +54,66 @@ public class PCWrapper {
 		activity.setContentView(vsv);
 	}
 
-	// Log |msg| and Toast about it.
-	private void logAndToast(String msg) {
-		Log.d(TAG, msg);
-		if (logToast != null) {
-			logToast.cancel();
-		}
-		logToast = Toast.makeText(activity, msg, Toast.LENGTH_SHORT);
-		logToast.show();
-	}
-
-	// Put a |key|->|value| mapping in |json|.
-	private static void jsonPut(JSONObject json, String key, Object value) {
-		try {
-			json.put(key, value);
-		} catch (JSONException e) {
-			throw new RuntimeException(e);
-		}
-	}	
-
-	// Poor-man's assert(): die with |msg| unless |condition| is true.
-	private static void abortUnless(boolean condition, String msg) {
-		if (!condition) {
-			throw new RuntimeException(msg);
-		}
-	}
-
-	
-	// Implementation detail: observe ICE & stream changes and react
-	// accordingly.
 	private class PCObserver implements PeerConnection.Observer {
 		@Override
 		public void onIceCandidate(final IceCandidate candidate) {
-			JSONObject json = new JSONObject();
-			jsonPut(json, "type", "candidate");
-			jsonPut(json, "label", candidate.sdpMLineIndex);
-			jsonPut(json, "id", candidate.sdpMid);
-			jsonPut(json, "candidate", candidate.sdp);
+			// make param
+			JSONObject param = new JSONObject();
+			try {
+				param.put("type", "candidate");
+				param.put("label", candidate.sdpMLineIndex);
+				param.put("id", candidate.sdpMid);
+				param.put("candidate", candidate.sdp);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			
+			// call cb_method
 			pcManager.cb_method("onIceCandidate", pc_id, param);
 		}
 
 		@Override
 		public void onError() {
+			JSONObject param = new JSONObject();
 			pcManager.cb_method("onError", pc_id, param);
 		}
 
 		@Override
 		public void onSignalingChange(PeerConnection.SignalingState newState) {
+			JSONObject param = new JSONObject();
 			pcManager.cb_method("onSignalingChange", pc_id, param);
 		}
 
 		@Override
 		public void onIceConnectionChange(
 				PeerConnection.IceConnectionState newState) {
+			JSONObject param = new JSONObject();
 			pcManager.cb_method("onIceConnectionChange", pc_id, param);
 		}
 
 		@Override
 		public void onIceGatheringChange(
 				PeerConnection.IceGatheringState newState) {
+			JSONObject param = new JSONObject();
 			pcManager.cb_method("onIceGatheringChange", pc_id, param);
 		}
 
 		@Override
 		public void onAddStream(final MediaStream stream) {
-
-			abortUnless(
-					stream.audioTracks.size() <= 1
-							&& stream.videoTracks.size() <= 1,
-					"Weird-looking stream: " + stream);
-			if (stream.videoTracks.size() == 1) {
-//				stream.videoTracks.get(0).addRenderer(
-//						new VideoRenderer(new VideoCallbacks(vsv,
-//								VideoStreamsView.Endpoint.REMOTE)));
-			}
-			
+			JSONObject param = new JSONObject();
 			pcManager.cb_method("onAddStream", pc_id, param);
 		}
 
 		@Override
 		public void onRemoveStream(final MediaStream stream) {
-
 			stream.videoTracks.get(0).dispose();
-			
+			JSONObject param = new JSONObject();
 			pcManager.cb_method("onRemoveStream", pc_id, param);
 		}
 
 		@Override
 		public void onDataChannel(final DataChannel dc) {
-
+			JSONObject param = new JSONObject();
 			pcManager.cb_method("onDataChannel", pc_id, param);
 			
 			throw new RuntimeException(
@@ -154,15 +121,26 @@ public class PCWrapper {
 							+ " anyway!");
 		}
 	}
-
+	  
 	// Implementation detail: handle offer creation/signaling and answer
 	// setting,
 	// as well as adding remote ICE candidates once the answer SDP is set.
 	private class SDPObserver implements SdpObserver {
 		@Override
 		public void onCreateSuccess(final SessionDescription origSdp) {
-			// pcManager.cb_method("cb_createOffer", pc_id, param);
-			// pcManager.cb_method("cb_createAnswer", pc_id, param);
+			JSONObject cb_param = new JSONObject();			
+			try {
+				cb_param.put("type", origSdp.type.canonicalForm());
+				cb_param.put("sdp", origSdp.description);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			
+			if (origSdp.type.canonicalForm() == "offer") {
+				pcManager.cb_method("cb_createOffer", pc_id, cb_param);
+			} else if (origSdp.type.canonicalForm() == "answer") {
+				pcManager.cb_method("cb_createAnswer", pc_id, cb_param);
+			}
 		}
 
 		@Override
@@ -178,15 +156,11 @@ public class PCWrapper {
 		public void onSetFailure(final String error) {
 			throw new RuntimeException("setSDP error: " + error);
 		}
-
-		private void drainRemoteCandidates() {
-		}
 	}
 
 	public void create_pc() {
 		factory = new PeerConnectionFactory();
-
-		MediaConstraints pcConstraints = null;
+		
 		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
 				"RtpDataChannels", "true"));
 
@@ -195,13 +169,13 @@ public class PCWrapper {
 
 	public JSONObject addStream(JSONObject param) {
 		JSONObject res = new JSONObject();
-		pc.addStream(lms, new MediaConstraints());
+		pc.addStream(localMediaStream, new MediaConstraints());
 		return res;
 	}
 	
 	public JSONObject removeStream(JSONObject param) {
 		JSONObject res = new JSONObject();
-		pc.removeStream(lms);
+		pc.removeStream(localMediaStream);
 		
 		return res;
 	}
@@ -325,23 +299,22 @@ public class PCWrapper {
 		return res;
 	}
 	
-	// av device functions
-	public VideoTrack videoTrack;
-	
+	// av device functions	
 	@JavascriptInterface
 	public JSONObject get_user_media(JSONObject param) {		
 		JSONObject res = new JSONObject();
-		if(lms != null) {
-			logAndToast("Creating local video source...");
-			lms = factory.createLocalMediaStream("ARDAMS");
-			VideoCapturer capturer = getVideoCapturer();
+		if(localMediaStream == null) {
+			localMediaStream = factory.createLocalMediaStream("ARDAMS");
+			capturer = getVideoCapturer();
 			videoSource = factory.createVideoSource(capturer, videoConstraints);
 			videoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
 			
-			lms.addTrack(videoTrack);
-			lms.addTrack(factory.createAudioTrack("ARDAMSa0"));
+			localMediaStream.addTrack(videoTrack);
+			localMediaStream.addTrack(factory.createAudioTrack("ARDAMSa0"));
 		}
-		pcManager.cb_method("cb_getUserMedia", 0, param);
+		
+		JSONObject cb_param = new JSONObject();
+		pcManager.cb_method("cb_getUserMedia", 0, cb_param);
 
 		return res;
 	}
@@ -358,12 +331,12 @@ public class PCWrapper {
 							+ ", Orientation " + orientation;
 					VideoCapturer capturer = VideoCapturer.create(name);
 					if (capturer != null) {
-						logAndToast("Using camera: " + name);
 						return capturer;
 					}
 				}
 			}
 		}
-		throw new RuntimeException("Failed to open capturer");
+		
+		return null;
 	}	
 }
