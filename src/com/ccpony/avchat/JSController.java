@@ -13,21 +13,22 @@ public class JSController {
 	
 	public PlayerManager playerManager = new PlayerManager(); 
 	public PCManager pcManager = null;
-	public ViewManager viewManager = new ViewManager();
+	public ViewManager viewManager = null;
 	public AVDeviceManager avDeviceManager = null;
 	
 	public void start(Activity activity,String js_controller_url) {
 		js_runtime = new WebView(activity);		
 		js_runtime.getSettings().setJavaScriptEnabled(true);	
 		
+		avDeviceManager = new AVDeviceManager(js_runtime);
+		pcManager = new PCManager(js_runtime);
+		viewManager = new ViewManager(activity);
+		
 		js_runtime.addJavascriptInterface(playerManager, "playerManager");
 		js_runtime.addJavascriptInterface(pcManager, "pcManagerProxy");
 		js_runtime.addJavascriptInterface(viewManager, "viewManager");
-		js_runtime.addJavascriptInterface(avDeviceManager, "avDeviceManager");
+		js_runtime.addJavascriptInterface(avDeviceManager, "avDeviceManager");	
 		
-		avDeviceManager = new AVDeviceManager(js_runtime);
-		pcManager = new PCManager(js_runtime);
-						
 		js_runtime.loadUrl(js_controller_url);
 	}
 	

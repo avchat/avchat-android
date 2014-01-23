@@ -12,11 +12,7 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
-import org.webrtc.VideoCapturer;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRenderer.I420Frame;
 import org.webrtc.VideoSource;
-import org.webrtc.VideoTrack;
 
 import android.app.Activity;
 import android.graphics.Point;
@@ -45,6 +41,7 @@ public class PCWrapper {
 	PCManager pcManager = null;
 	int pc_id = 0;
 	JSONObject param = null;
+	MediaStream lms;
 
 	public PCWrapper(WebView js_runtime, Activity activity) {
 		this.js_runtime = js_runtime;
@@ -82,34 +79,7 @@ public class PCWrapper {
 		}
 	}
 
-	// Implementation detail: bridge the VideoRenderer.Callbacks interface to
-	// the
-	// VideoStreamsView implementation.
-	private class VideoCallbacks implements VideoRenderer.Callbacks {
-		private final VideoStreamsView view;
-		private final VideoStreamsView.Endpoint stream;
-
-		public VideoCallbacks(VideoStreamsView view,
-				VideoStreamsView.Endpoint stream) {
-			this.view = view;
-			this.stream = stream;
-		}
-
-		@Override
-		public void setSize(final int width, final int height) {
-			view.queueEvent(new Runnable() {
-				public void run() {
-					view.setSize(stream, width, height);
-				}
-			});
-		}
-
-		@Override
-		public void renderFrame(I420Frame frame) {
-			view.queueFrame(stream, frame);
-		}
-	}
-
+	
 	// Implementation detail: observe ICE & stream changes and react
 	// accordingly.
 	private class PCObserver implements PeerConnection.Observer {
@@ -154,9 +124,9 @@ public class PCWrapper {
 							&& stream.videoTracks.size() <= 1,
 					"Weird-looking stream: " + stream);
 			if (stream.videoTracks.size() == 1) {
-				stream.videoTracks.get(0).addRenderer(
-						new VideoRenderer(new VideoCallbacks(vsv,
-								VideoStreamsView.Endpoint.REMOTE)));
+//				stream.videoTracks.get(0).addRenderer(
+//						new VideoRenderer(new VideoCallbacks(vsv,
+//								VideoStreamsView.Endpoint.REMOTE)));
 			}
 			
 			pcManager.cb_method("onAddStream", pc_id, param);
@@ -216,85 +186,46 @@ public class PCWrapper {
 		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
 				"RtpDataChannels", "true"));
 
-		pc = factory
-				.createPeerConnection(iceServers, pcConstraints, pcObserver);
-
-		final PeerConnection finalPC = pc;
-		
-	}
-
-	private VideoCapturer getVideoCapturer() {
-		String[] cameraFacing = { "front", "back" };
-		int[] cameraIndex = { 0, 1 };
-		int[] cameraOrientation = { 0, 90, 180, 270 };
-
-		for (String facing : cameraFacing) {
-			for (int index : cameraIndex) {
-				for (int orientation : cameraOrientation) {
-					String name = "Camera " + index + ", Facing " + facing
-							+ ", Orientation " + orientation;
-					VideoCapturer capturer = VideoCapturer.create(name);
-					if (capturer != null) {
-						logAndToast("Using camera: " + name);
-						return capturer;
-					}
-				}
-			}
-		}
-		throw new RuntimeException("Failed to open capturer");
-	}
-	
-	public void getusermedia() {
-		logAndToast("Creating local video source...");
-		MediaStream lMS = factory.createLocalMediaStream("ARDAMS");
-		VideoCapturer capturer = getVideoCapturer();
-		videoSource = factory.createVideoSource(capturer, videoConstraints);
-		VideoTrack videoTrack = factory.createVideoTrack("ARDAMSv0",
-				videoSource);
-		videoTrack.addRenderer(new VideoRenderer(new VideoCallbacks(vsv,
-				VideoStreamsView.Endpoint.LOCAL)));
-		lMS.addTrack(videoTrack);
-		lMS.addTrack(factory.createAudioTrack("ARDAMSa0"));
-		pc.addStream(lMS, new MediaConstraints());
+		pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);				
 	}
 
 	public void addStream() {
-
+		pc.addStream(lms, new MediaConstraints());
 	}
 	
 	public void removeStream() {
-
+		pc.removeStream(lms);
 	}
 
 	public void close() {
-
+		pc.close();
 	}
 
 	public void createOffer() {
-
+		pc.createOffer(sdpObserver, videoConstraints);
 	}
 	
 	public void createAnswer() {
-
+		pc.createAnswer(sdpObserver, videoConstraints);
 	}
 
 	public void createDataChannel() {
-
+		pc.createDataChannel(null, null);
 	}
 
 	public void setLocalDescription() {
-
+		pc.setLocalDescription(sdpObserver, null);
 	}
 
 	public void setRemoteDescription() {
-
+		pc.setRemoteDescription(sdpObserver, null);
 	}
 
 	public void updateIce() {
-
+		pc.updateIce(iceServers, videoConstraints);
 	}
 	
-	public void addIceCandidate() {
-
+	public void addIceCandidate(IceCandidate ice) {
+		pc.addIceCandidate(ice);
 	}
 }
