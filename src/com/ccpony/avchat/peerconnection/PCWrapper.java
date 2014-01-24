@@ -1,6 +1,5 @@
 package com.ccpony.avchat.peerconnection;
 
-import java.util.HashMap;
 import java.util.List;
 
 import org.json.JSONException;
@@ -13,23 +12,14 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
-import org.webrtc.VideoCapturer;
-import org.webrtc.VideoSource;
-import org.webrtc.VideoTrack;
 
 import android.app.Activity;
-import android.graphics.Point;
-import android.widget.LinearLayout;
-
-import com.ccpony.avchat.player.VideoPlayer;
-import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCWrapper {
 	private PCManager pcManager = null;
-	private Activity activity = null;
-	
-	private int pc_id = 0;	
 	private PeerConnectionFactory factory = null;
+	
+	private String pc_id = "";		
 	private PeerConnection pc = null;	
 	private MediaConstraints pcConstraints = null;
 	private MediaConstraints videoConstraints = null;	
@@ -37,23 +27,16 @@ public class PCWrapper {
 	private final PCObserver pcObserver = new PCObserver();
 	private final SDPObserver sdpObserver = new SDPObserver();
 	
-	private MediaStream localMediaStream = null;
-	private VideoTrack videoTrack = null;
-	private VideoSource videoSource = null;
-	private VideoCapturer videoCapturer = null;
-	
-	
-
 	/**
 	 * 构造函数
 	 * @param activity
 	 * @param pcManager
 	 */
-	public PCWrapper(Activity activity, PCManager pcManager) {
-		this.activity = activity;
+	public PCWrapper(PCManager pcManager, String pc_id) {
 		this.pcManager = pcManager;
+		this.pc_id = pc_id;
 		
-		factory = new PeerConnectionFactory();
+		factory = pcManager.get_pc_factory();
 		
 		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
 				"RtpDataChannels", "true"));
@@ -177,7 +160,7 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject addStream(JSONObject param) {
+	public JSONObject addStream(JSONObject param, MediaStream localMediaStream) {
 		JSONObject res = new JSONObject();
 		pc.addStream(localMediaStream, new MediaConstraints());
 		return res;
@@ -188,7 +171,7 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject removeStream(JSONObject param) {
+	public JSONObject removeStream(JSONObject param, MediaStream localMediaStream) {
 		JSONObject res = new JSONObject();
 		pc.removeStream(localMediaStream);
 		
@@ -302,15 +285,4 @@ public class PCWrapper {
 
 		return res;
 	}	
-	
-	/**
-	 * 停止本地媒体流
-	 * @param param
-	 * @return
-	 */
-	public JSONObject mediastream_stop(JSONObject param) {
-		JSONObject res = new JSONObject();
-
-		return res;
-	}
 }

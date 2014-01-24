@@ -4,10 +4,12 @@ import java.util.HashMap;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.webrtc.MediaConstraints;
+import org.webrtc.MediaStream;
+import org.webrtc.PeerConnectionFactory;
 import org.webrtc.VideoCapturer;
-
-import com.ccpony.avchat.player.VideoPlayer;
-import com.ccpony.avchat.view.VideoStreamsView;
+import org.webrtc.VideoSource;
+import org.webrtc.VideoTrack;
 
 import android.app.Activity;
 import android.graphics.Point;
@@ -15,25 +17,39 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.LinearLayout;
 
+import com.ccpony.avchat.player.VideoPlayer;
+import com.ccpony.avchat.view.VideoStreamsView;
+
 public class PCManager {
 	private WebView js_runtime = null;
 	private Activity activity = null;
-	private HashMap<Integer, PCWrapper> pc_map = new HashMap<Integer, PCWrapper>();
-	LinearLayout line_layout = null;	
-	HashMap<String, VideoStreamsView> view_map = new HashMap<String, VideoStreamsView>();	
-	HashMap<String, VideoPlayer> player_map = new HashMap<String, VideoPlayer>();
+	private HashMap<String, PCWrapper> pc_map = new HashMap<String, PCWrapper>();
+	private HashMap<String, VideoPlayer> player_map = new HashMap<String, VideoPlayer>();
+	private HashMap<String, VideoStreamsView> view_map = new HashMap<String, VideoStreamsView>();	
+	private LinearLayout line_layout = null;	
+	
+	private MediaStream localMediaStream = null;
+	private VideoTrack videoTrack = null;
+	private VideoSource videoSource = null;
+	private VideoCapturer videoCapturer = null;
+	private PeerConnectionFactory factory = null;
+	private MediaConstraints videoConstraints = null;	
 	
 	
-	public PCManager(WebView webView, Activity activity) {
-		this.js_runtime = webView;
+	public PCManager(WebView js_runtime, Activity activity) {
+		this.js_runtime = js_runtime;
 		this.activity = activity;
 		
-		line_layout = new LinearLayout(activity);
+		this.line_layout = new LinearLayout(activity);
+		this.factory = new PeerConnectionFactory();
+	}
+	
+	public PeerConnectionFactory get_pc_factory() {
+		return factory;
 	}
 
 	@JavascriptInterface
-	public String call_method(int method, int pc_id, String param_str) {
-		JSONObject res = null;
+	public void call_method(String method, String pc_id, String param_str) {
 		PCWrapper pc_wrapper = pc_map.get(pc_id);
 		JSONObject param = null;
 		try {
@@ -41,68 +57,49 @@ public class PCManager {
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		switch(method) {
-		case 1: // pc_new
-			pc_wrapper = new PCWrapper(activity, this);
+		
+		if(method == "pc_new") {
+			pc_wrapper = new PCWrapper(this, pc_id);
 			pc_map.put(pc_id, pc_wrapper);
-			break;
-		case 2: // addStream
-			res = pc_wrapper.addStream(param);	 
-			break;
-		case 3: // removeStream
-			res = pc_wrapper.removeStream(param);
-			break;
-		case 4: // close
-			res = pc_wrapper.close(param);
-			break;
-		case 5: // createAnswer
-			res = pc_wrapper.createAnswer(param);
-			break;
-		case 6: // createOffer
-			res = pc_wrapper.createOffer(param);
-			break;
-		case 7: // createDataChannel
-			res = pc_wrapper.createDataChannel(param);
-			break;
-		case 8: // setLocalDescription
-			res = pc_wrapper.setLocalDescription(param);
-			break;
-		case 9: // setRemoteDescription
-			res = pc_wrapper.setRemoteDescription(param);
-			break;
-		case 10: // updateIce
-			res = pc_wrapper.updateIce(param);
-			break;
-		case 11: // addIceCandidate
-			res = pc_wrapper.addIceCandidate(param);
-			break;
-		case 12: // getStats
-			res = pc_wrapper.getStats(param);
-			break;
-		case 13: // mediastream_stop
-			res = pc_wrapper.mediastream_stop(param);
-			break;
-		case 14: // player_new
-			res = pc_wrapper.player_new(param);
-			break;
-		case 15: // player_delete
-			res = pc_wrapper.player_delete(param);
-			break;
-		case 16: // view_new 
-			res = pc_wrapper.view_new(param);
-			break;
-		case 17: // view_delete
-			res = pc_wrapper.view_delete(param);
-			break;
-		case 18: // get_user_media
-			res = pc_wrapper.get_user_media(param);
-			break;
+		} else if(method == "addStream") {
+			pc_wrapper.addStream(param, localMediaStream);	 
+		} else if(method == "removeStream") {
+			pc_wrapper.removeStream(param, localMediaStream);
+		} else if(method == "close") {
+			pc_wrapper.close(param);
+		} else if(method == "createAnswer") {
+			pc_wrapper.createAnswer(param);
+		} else if(method == "createOffer") {
+			pc_wrapper.createOffer(param);
+		} else if(method == "createDataChannel") {
+			pc_wrapper.createDataChannel(param);
+		} else if(method == "setLocalDescription") {
+			pc_wrapper.setLocalDescription(param);
+		} else if(method == "setRemoteDescription") {
+			pc_wrapper.setRemoteDescription(param);
+		} else if(method == "updateIce") {
+			pc_wrapper.updateIce(param);
+		} else if(method == "addIceCandidate") {
+			pc_wrapper.addIceCandidate(param);
+		} else if(method == "getStats") {
+			pc_wrapper.getStats(param);
+		} else if(method == "mediastream_stop") {
+			this.mediastream_stop(param);
+		} else if(method == "player_new") {
+			this.player_new(param);
+		} else if(method == "player_delete") {
+			this.player_delete(param);
+		} else if(method == "view_new") {
+			this.view_new(param);
+		} else if(method == "view_delete") {
+			this.view_delete(param);
+		} else if(method == "get_user_media") {
+			this.get_user_media(param);
 		}
-		return res.toString();
 	}
 	
-	public void cb_method(String method, int pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcManagerJS."+ method + "," + pc_id + "," + param.toString() + ")");
+	public void cb_method(String method, String pc_id, JSONObject param) {
+		js_runtime.loadUrl("javascript:pcManagerJS.cb_method("+ method + "," + pc_id + "," + param.toString() + ")");
 	}
 	
 	/**
@@ -110,8 +107,7 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject player_new(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void player_new(JSONObject param) {
 		try {
 			String play_id = param.getString("play_id");
 			int view_id = param.getInt("view_id");
@@ -122,8 +118,6 @@ public class PCManager {
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-
-		return res;
 	}
 	
 	/**
@@ -131,11 +125,14 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject player_delete(JSONObject param) {
-		JSONObject res = new JSONObject();
-		player_map.get(null);
-
-		return res;
+	public void player_delete(JSONObject param) {
+		try {
+			String play_id = param.getString("play_id");
+			
+			player_map.remove(play_id);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -143,17 +140,20 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject view_new(JSONObject param) {
-		JSONObject res = new JSONObject();
-		String view_id = null;
-		int width = 0;
-		int height = 0;
-		Point displaySize = new Point(width, height);		
-		VideoStreamsView vsv = new VideoStreamsView(activity, displaySize);
-		view_map.put(view_id, vsv);
-		line_layout.addView(vsv);
-
-		return res;
+	public void view_new(JSONObject param) {
+		try {
+			String view_id = param.getString("view_id");
+			int width = param.getInt("width");
+			int height = param.getInt("height");
+			
+			Point displaySize = new Point(width, height);		
+			VideoStreamsView vsv = new VideoStreamsView(activity, displaySize);
+			view_map.put(view_id, vsv);
+			line_layout.addView(vsv);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 	/**
@@ -161,13 +161,24 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject view_delete(JSONObject param) {
-		JSONObject res = new JSONObject();
-		String view_id = null;
-		VideoStreamsView vsv = view_map.get(view_id);
-		line_layout.removeView(vsv);
-
-		return res;
+	public void view_delete(JSONObject param) {
+		try {
+			String view_id = param.getString("view_id");
+			
+			VideoStreamsView vsv = view_map.remove(view_id);
+			line_layout.removeView(vsv);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 停止本地媒体流
+	 * @param param
+	 * @return
+	 */
+	public void mediastream_stop(JSONObject param) {
+		localMediaStream.dispose();
 	}
 	
 	/**
@@ -175,8 +186,7 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject get_user_media(JSONObject param) {		
-		JSONObject res = new JSONObject();
+	public void get_user_media(JSONObject param) {		
 		if(localMediaStream == null) {
 			localMediaStream = factory.createLocalMediaStream("ARDAMS");
 			videoCapturer = getVideoCapturer();
@@ -188,9 +198,7 @@ public class PCManager {
 		}
 		
 		JSONObject cb_param = new JSONObject();
-		pcManager.cb_method("cb_getUserMedia", 0, cb_param);
-
-		return res;
+		this.cb_method("cb_getUserMedia", "0", cb_param);
 	}
 	
 	/**
