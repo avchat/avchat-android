@@ -40,11 +40,9 @@ public class PCWrapper {
 	private MediaStream localMediaStream = null;
 	private VideoTrack videoTrack = null;
 	private VideoSource videoSource = null;
-	private VideoCapturer capturer = null;
+	private VideoCapturer videoCapturer = null;
 	
-	LinearLayout line_layout = new LinearLayout(activity);	
-	HashMap<String, VideoStreamsView> view_map = new HashMap<String, VideoStreamsView>();	
-	HashMap<String, VideoPlayer> player_map = new HashMap<String, VideoPlayer>();
+	
 
 	/**
 	 * 构造函数
@@ -315,117 +313,4 @@ public class PCWrapper {
 
 		return res;
 	}
-	
-	/**
-	 * 创建新的视频播放器
-	 * @param param
-	 * @return
-	 */
-	public JSONObject new_player(JSONObject param) {
-		JSONObject res = new JSONObject();
-		try {
-			String play_id = param.getString("play_id");
-			int view_id = param.getInt("view_id");
-			
-			VideoStreamsView vsv = view_map.get(view_id);
-			VideoPlayer view_player = new VideoPlayer(vsv);
-			player_map.put(play_id, view_player);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-
-		return res;
-	}
-	
-	/**
-	 * 删除视频播放器
-	 * @param param
-	 * @return
-	 */
-	public JSONObject delete_player(JSONObject param) {
-		JSONObject res = new JSONObject();
-		player_map.get(null);
-
-		return res;
-	}
-	
-	/**
-	 * 创建新的UI视图
-	 * @param param
-	 * @return
-	 */
-	public JSONObject new_view(JSONObject param) {
-		JSONObject res = new JSONObject();
-		String view_id = null;
-		int width = 0;
-		int height = 0;
-		Point displaySize = new Point(width, height);		
-		VideoStreamsView vsv = new VideoStreamsView(activity, displaySize);
-		view_map.put(view_id, vsv);
-		line_layout.addView(vsv);
-
-		return res;
-	}
-
-	/**
-	 * 删除一个UI视图
-	 * @param param
-	 * @return
-	 */
-	public JSONObject delete_view(JSONObject param) {
-		JSONObject res = new JSONObject();
-		String view_id = null;
-		VideoStreamsView vsv = view_map.get(view_id);
-		line_layout.removeView(vsv);
-
-		return res;
-	}
-	
-	/**
-	 * 创建本地流
-	 * @param param
-	 * @return
-	 */
-	public JSONObject get_user_media(JSONObject param) {		
-		JSONObject res = new JSONObject();
-		if(localMediaStream == null) {
-			localMediaStream = factory.createLocalMediaStream("ARDAMS");
-			capturer = getVideoCapturer();
-			videoSource = factory.createVideoSource(capturer, videoConstraints);
-			videoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
-			
-			localMediaStream.addTrack(videoTrack);
-			localMediaStream.addTrack(factory.createAudioTrack("ARDAMSa0"));
-		}
-		
-		JSONObject cb_param = new JSONObject();
-		pcManager.cb_method("cb_getUserMedia", 0, cb_param);
-
-		return res;
-	}
-	
-	/**
-	 * 私有方法，主要打开本地camera设备
-	 * @return
-	 */
-	private VideoCapturer getVideoCapturer() {
-		String[] cameraFacing = { "front", "back" };
-		int[] cameraIndex = { 0, 1 };
-		int[] cameraOrientation = { 0, 90, 180, 270 };
-
-		for (String facing : cameraFacing) {
-			for (int index : cameraIndex) {
-				for (int orientation : cameraOrientation) {
-					String name = "Camera " + index + ", Facing " + facing
-							+ ", Orientation " + orientation;
-					VideoCapturer capturer = VideoCapturer.create(name);
-					if (capturer != null) {
-						return capturer;
-					}
-				}
-			}
-		}
-		
-		return null;
-	}	
 }
