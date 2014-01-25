@@ -76,6 +76,11 @@ public class PCWrapper {
 		@Override
 		public void onSignalingChange(PeerConnection.SignalingState newState) {
 			JSONObject param = new JSONObject();
+			try {
+				param.put("state", newState.toString());
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			pcManager.cb_method("onSignalingChange", pc_id, param);
 		}
 
@@ -83,6 +88,11 @@ public class PCWrapper {
 		public void onIceConnectionChange(
 				PeerConnection.IceConnectionState newState) {
 			JSONObject param = new JSONObject();
+			try {
+				param.put("state", newState.toString());
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			pcManager.cb_method("onIceConnectionChange", pc_id, param);
 		}
 
@@ -90,12 +100,23 @@ public class PCWrapper {
 		public void onIceGatheringChange(
 				PeerConnection.IceGatheringState newState) {
 			JSONObject param = new JSONObject();
+			try {
+				param.put("state", newState.toString());
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			pcManager.cb_method("onIceGatheringChange", pc_id, param);
 		}
 
 		@Override
 		public void onAddStream(final MediaStream stream) {
 			JSONObject param = new JSONObject();
+			try {
+				param.put("pc_id", pc_id);
+				param.put("stream_type", "remote");
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			pcManager.cb_method("onAddStream", pc_id, param);
 		}
 
@@ -103,6 +124,12 @@ public class PCWrapper {
 		public void onRemoveStream(final MediaStream stream) {
 			stream.videoTracks.get(0).dispose();
 			JSONObject param = new JSONObject();
+			try {
+				param.put("pc_id", pc_id);
+				param.put("stream_type", "remote");
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			pcManager.cb_method("onRemoveStream", pc_id, param);
 		}
 

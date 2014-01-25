@@ -198,6 +198,12 @@ public class PCManager {
 		}
 		
 		JSONObject cb_param = new JSONObject();
+		try {
+			cb_param.put("pc_id", "0");
+			cb_param.put("stream_type", "local");
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 		this.cb_method("cb_getUserMedia", "0", cb_param);
 	}
 	
