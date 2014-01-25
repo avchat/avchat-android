@@ -160,10 +160,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject addStream(JSONObject param, MediaStream localMediaStream) {
-		JSONObject res = new JSONObject();
+	public void addStream(JSONObject param, MediaStream localMediaStream) {
 		pc.addStream(localMediaStream, new MediaConstraints());
-		return res;
 	}
 	
 	/**
@@ -171,11 +169,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject removeStream(JSONObject param, MediaStream localMediaStream) {
-		JSONObject res = new JSONObject();
+	public void removeStream(JSONObject param, MediaStream localMediaStream) {
 		pc.removeStream(localMediaStream);
-		
-		return res;
 	}
 
 	/**
@@ -183,11 +178,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject close(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void close() {
 		pc.close();
-		
-		return res;
 	}
 
 	/**
@@ -195,11 +187,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject createOffer(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void createOffer(JSONObject param) {
 		pc.createOffer(sdpObserver, videoConstraints);
-
-		return res;
 	}
 	
 	/**
@@ -207,11 +196,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject createAnswer(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void createAnswer(JSONObject param) {
 		pc.createAnswer(sdpObserver, videoConstraints);
-
-		return res;
 	}
 
 	/**
@@ -219,11 +205,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject createDataChannel(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void createDataChannel(JSONObject param) {
 		pc.createDataChannel(null, null);
-
-		return res;
 	}
 
 	/**
@@ -231,11 +214,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject setLocalDescription(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void setLocalDescription(JSONObject param) {
 		pc.setLocalDescription(sdpObserver, null);
-
-		return res;
 	}
 
 	/**
@@ -243,11 +223,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject setRemoteDescription(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void setRemoteDescription(JSONObject param) {
 		pc.setRemoteDescription(sdpObserver, null);
-
-		return res;
 	}
 
 	/**
@@ -255,11 +232,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject updateIce(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void updateIce(JSONObject param) {
 		pc.updateIce(iceServers, videoConstraints);
-
-		return res;
 	}
 	
 	/**
@@ -267,22 +241,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public JSONObject addIceCandidate(JSONObject param) {
-		JSONObject res = new JSONObject();
+	public void addIceCandidate(JSONObject param) {
 		IceCandidate ice = null;
 		pc.addIceCandidate(ice);
-
-		return res;
 	}
-	
-	/**
-	 * 获取统计信息
-	 * @param param
-	 * @return
-	 */
-	public JSONObject getStats(JSONObject param) {
-		JSONObject res = new JSONObject();
-
-		return res;
-	}	
 }

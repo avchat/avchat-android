@@ -66,7 +66,7 @@ public class PCManager {
 		} else if(method == "removeStream") {
 			pc_wrapper.removeStream(param, localMediaStream);
 		} else if(method == "close") {
-			pc_wrapper.close(param);
+			pc_wrapper.close();
 		} else if(method == "createAnswer") {
 			pc_wrapper.createAnswer(param);
 		} else if(method == "createOffer") {
@@ -82,7 +82,7 @@ public class PCManager {
 		} else if(method == "addIceCandidate") {
 			pc_wrapper.addIceCandidate(param);
 		} else if(method == "getStats") {
-			pc_wrapper.getStats(param);
+			/*pc_wrapper.getStats(param);*/
 		} else if(method == "mediastream_stop") {
 			this.mediastream_stop(param);
 		} else if(method == "player_new") {
