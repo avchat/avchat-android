@@ -33,7 +33,7 @@ public class PCManager {
 	private VideoSource videoSource = null;
 	private VideoCapturer videoCapturer = null;
 	private PeerConnectionFactory factory = null;
-	private MediaConstraints videoConstraints = null;	
+	//private MediaConstraints videoConstraints = null;	
 	
 	
 	public PCManager(WebView js_runtime, Activity activity) {
@@ -187,6 +187,7 @@ public class PCManager {
 	 * @return
 	 */
 	public void get_user_media(JSONObject param) {		
+		MediaConstraints videoConstraints = null;
 		if(localMediaStream == null) {
 			localMediaStream = factory.createLocalMediaStream("ARDAMS");
 			videoCapturer = getVideoCapturer();

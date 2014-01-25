@@ -14,8 +14,6 @@ import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SessionDescription.Type;
 
-import android.app.Activity;
-
 public class PCWrapper {
 	private PCManager pcManager = null;
 	private PeerConnectionFactory factory = null;
@@ -23,7 +21,6 @@ public class PCWrapper {
 	private String pc_id = "";		
 	private PeerConnection pc = null;	
 	private MediaConstraints pcConstraints = null;
-	private MediaConstraints videoConstraints = null;	
 	private List<PeerConnection.IceServer> iceServers = null;
 	private final PCObserver pcObserver = new PCObserver();
 	private final SDPObserver sdpObserver = new SDPObserver();
@@ -216,6 +213,9 @@ public class PCWrapper {
 	 * @return
 	 */
 	public void createOffer(JSONObject param) {
+		MediaConstraints videoConstraints = new MediaConstraints();
+		MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair("","");
+		videoConstraints.mandatory.add(kv);
 		pc.createOffer(sdpObserver, videoConstraints);
 	}
 	
@@ -225,11 +225,14 @@ public class PCWrapper {
 	 * @return
 	 */
 	public void createAnswer(JSONObject param) {
+		MediaConstraints videoConstraints = new MediaConstraints();
+		MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair("","");
+		videoConstraints.mandatory.add(kv);
 		pc.createAnswer(sdpObserver, videoConstraints);
 	}
 
 	/**
-	 * 创建数据通道
+	 * 创建数据通道(有调用，但暂不实现数据部分)
 	 * @param param
 	 * @return
 	 */
@@ -284,16 +287,16 @@ public class PCWrapper {
 	}
 
 	/**
-	 * 更新ICE server列表
+	 * 更新ICE server列表(没调用，暂不实现)
 	 * @param param
 	 * @return
 	 */
 	public void updateIce(JSONObject param) {
-		pc.updateIce(iceServers, videoConstraints);
+		//pc.updateIce(iceServers, videoConstraints);
 	}
 	
 	/**
-	 * 增加新的ICE候选点
+	 * 增加新的ICE候选点(没调用，暂不实现)
 	 * @param param
 	 * @return
 	 */
