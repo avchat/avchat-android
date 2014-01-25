@@ -12,6 +12,7 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
+import org.webrtc.SessionDescription.Type;
 
 import android.app.Activity;
 
@@ -242,7 +243,21 @@ public class PCWrapper {
 	 * @return
 	 */
 	public void setLocalDescription(JSONObject param) {
-		pc.setLocalDescription(sdpObserver, null);
+		SessionDescription sd = null;
+		Type type = SessionDescription.Type.OFFER;
+		try {
+			String type_str = param.getString("type");
+			if(type_str == "offer") {
+				type = SessionDescription.Type.OFFER;
+			} else if(type_str == "answer") {
+				type = SessionDescription.Type.ANSWER;
+			}
+			sd = new SessionDescription(type, param.getString("sdp"));
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		pc.setLocalDescription(sdpObserver, sd);
 	}
 
 	/**
@@ -251,7 +266,21 @@ public class PCWrapper {
 	 * @return
 	 */
 	public void setRemoteDescription(JSONObject param) {
-		pc.setRemoteDescription(sdpObserver, null);
+		SessionDescription sd = null;
+		Type type = SessionDescription.Type.OFFER;
+		try {
+			String type_str = param.getString("type");
+			if(type_str == "offer") {
+				type = SessionDescription.Type.OFFER;
+			} else if(type_str == "answer") {
+				type = SessionDescription.Type.ANSWER;
+			}
+			sd = new SessionDescription(type, param.getString("sdp"));
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		pc.setRemoteDescription(sdpObserver, sd);
 	}
 
 	/**
