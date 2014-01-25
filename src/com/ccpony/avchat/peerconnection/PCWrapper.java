@@ -160,7 +160,7 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public void addStream(JSONObject param, MediaStream localMediaStream) {
+	public void addStream(MediaStream localMediaStream) {
 		pc.addStream(localMediaStream, new MediaConstraints());
 	}
 	
@@ -169,7 +169,7 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public void removeStream(JSONObject param, MediaStream localMediaStream) {
+	public void removeStream(MediaStream localMediaStream) {
 		pc.removeStream(localMediaStream);
 	}
 

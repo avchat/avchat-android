@@ -62,9 +62,9 @@ public class PCManager {
 			pc_wrapper = new PCWrapper(this, pc_id);
 			pc_map.put(pc_id, pc_wrapper);
 		} else if(method == "addStream") {
-			pc_wrapper.addStream(param, localMediaStream);	 
+			pc_wrapper.addStream(localMediaStream);	 
 		} else if(method == "removeStream") {
-			pc_wrapper.removeStream(param, localMediaStream);
+			pc_wrapper.removeStream(localMediaStream);
 		} else if(method == "close") {
 			pc_wrapper.close();
 		} else if(method == "createAnswer") {
@@ -86,9 +86,9 @@ public class PCManager {
 		} else if(method == "mediastream_stop") {
 			this.mediastream_stop(param);
 		} else if(method == "player_new") {
-			this.player_new(param);
+			this.player_new(pc_id, param);
 		} else if(method == "player_delete") {
-			this.player_delete(param);
+			this.player_delete(pc_id, param);
 		} else if(method == "view_new") {
 			this.view_new(param);
 		} else if(method == "view_delete") {
@@ -107,7 +107,7 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public void player_new(JSONObject param) {
+	public void player_new(String pc_id, JSONObject param) {
 		try {
 			String play_id = param.getString("play_id");
 			int view_id = param.getInt("view_id");
@@ -125,7 +125,7 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public void player_delete(JSONObject param) {
+	public void player_delete(String pc_id, JSONObject param) {
 		try {
 			String play_id = param.getString("play_id");
 			
