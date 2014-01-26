@@ -25,14 +25,17 @@ public class PCWrapper {
 	private final PCObserver pcObserver = new PCObserver();
 	private final SDPObserver sdpObserver = new SDPObserver();
 	
+	public MediaStream media_stream_local = null;
+	public MediaStream media_stream_remote = null;
+	
 	/**
 	 * 构造函数
 	 * @param activity
 	 * @param pcManager
 	 */
-	public PCWrapper(PCManager pcManager, String pc_id) {
-		this.pcManager = pcManager;
+	public PCWrapper(String pc_id, PCManager pcManager) {
 		this.pc_id = pc_id;
+		this.pcManager = pcManager;		
 		
 		factory = pcManager.get_pc_factory();
 		
@@ -108,6 +111,8 @@ public class PCWrapper {
 
 		@Override
 		public void onAddStream(final MediaStream stream) {
+			media_stream_remote = stream;
+			
 			JSONObject param = new JSONObject();
 			try {
 				param.put("pc_id", pc_id);
@@ -120,6 +125,8 @@ public class PCWrapper {
 
 		@Override
 		public void onRemoveStream(final MediaStream stream) {
+			media_stream_remote = null;
+			
 			stream.videoTracks.get(0).dispose();
 			JSONObject param = new JSONObject();
 			try {
@@ -186,7 +193,9 @@ public class PCWrapper {
 	 * @return
 	 */
 	public void addStream(MediaStream localMediaStream) {
-		pc.addStream(localMediaStream, new MediaConstraints());
+		this.media_stream_local = localMediaStream;
+		
+		pc.addStream(media_stream_local, new MediaConstraints());
 	}
 	
 	/**
@@ -194,8 +203,10 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public void removeStream(MediaStream localMediaStream) {
+	public void removeStream(MediaStream localMediaStream) {		
 		pc.removeStream(localMediaStream);
+		
+		this.media_stream_local = null;
 	}
 
 	/**

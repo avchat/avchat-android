@@ -11,7 +11,7 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
-import android.app.Activity;
+import android.content.Context;
 import android.graphics.Point;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -22,37 +22,38 @@ import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCManager {
 	private WebView js_runtime = null;
-	private Activity room_activity = null;
+	private Context room_context = null;	
+	private PeerConnectionFactory pc_factory = null;
+	
 	private HashMap<String, PCWrapper> map_pc = new HashMap<String, PCWrapper>();
 	private HashMap<String, VideoPlayer> map_player = new HashMap<String, VideoPlayer>();
 	private HashMap<String, VideoStreamsView> map_view = new HashMap<String, VideoStreamsView>();	
 	private LinearLayout layout_line = null;	
 	
 	private MediaStream media_stream_local = null;
-	private VideoTrack video_track = null;
-	private VideoSource video_source = null;
-	private VideoCapturer video_capturer = null;
-	private PeerConnectionFactory pc_factory = null;
-	
-	public PCManager(WebView js_runtime, Activity room_activity) {
-		this.js_runtime = js_runtime;
-		this.room_activity = room_activity;
 		
-		this.layout_line = new LinearLayout(room_activity);
+	public PCManager(WebView js_runtime, Context room_context) {
+		this.js_runtime = js_runtime;
+		this.room_context = room_context;
+		
+		this.layout_line = new LinearLayout(room_context);
 		this.pc_factory = new PeerConnectionFactory();
+	}
+	
+	public PeerConnectionFactory get_pc_factory() {
+		return pc_factory;
 	}
 	
 	public LinearLayout get_line_layout() {
 		return layout_line;
 	}
 	
-	public PeerConnectionFactory get_pc_factory() {
-		return pc_factory;
-	}
-
 	@JavascriptInterface
 	public void call_method(String method, String pc_id, String param_str) {
+		// 获取PCWrapper对象
 		PCWrapper pc_wrapper = map_pc.get(pc_id);
+		
+		// 将JSON字符串解析成JSON对象
 		JSONObject param = null;
 		try {
 			param = new JSONObject(param_str);
@@ -60,43 +61,62 @@ public class PCManager {
 			e.printStackTrace();
 		}
 		
+		// 对调用进行分发处理
 		if(method == "pc_new") {
-			pc_wrapper = new PCWrapper(this, pc_id);
+			pc_wrapper = new PCWrapper(pc_id, this);
 			map_pc.put(pc_id, pc_wrapper);
+			
 		} else if(method == "addStream") {
-			pc_wrapper.addStream(media_stream_local);	 
+			pc_wrapper.addStream(media_stream_local);
+			
 		} else if(method == "removeStream") {
 			pc_wrapper.removeStream(media_stream_local);
+			
 		} else if(method == "close") {
 			pc_wrapper.close();
+			
 		} else if(method == "createAnswer") {
 			pc_wrapper.createAnswer(param);
+			
 		} else if(method == "createOffer") {
 			pc_wrapper.createOffer(param);
+			
 		} else if(method == "createDataChannel") {
 			pc_wrapper.createDataChannel(param);
+			
 		} else if(method == "setLocalDescription") {
 			pc_wrapper.setLocalDescription(param);
+			
 		} else if(method == "setRemoteDescription") {
 			pc_wrapper.setRemoteDescription(param);
+			
 		} else if(method == "updateIce") {
 			pc_wrapper.updateIce(param);
+			
 		} else if(method == "addIceCandidate") {
 			pc_wrapper.addIceCandidate(param);
+			
 		} else if(method == "getStats") {
 			/*pc_wrapper.getStats(param);*/
+			
 		} else if(method == "mediastream_stop") {
 			this.mediastream_stop(param);
+			
 		} else if(method == "player_new") {
 			this.player_new(pc_id, param);
+			
 		} else if(method == "player_delete") {
-			this.player_delete(pc_id, param);
+			this.player_delete(param);
+			
 		} else if(method == "view_new") {
 			this.view_new(param);
+			
 		} else if(method == "view_delete") {
 			this.view_delete(param);
+			
 		} else if(method == "get_user_media") {
 			this.get_user_media(param);
+			
 		}
 	}
 	
@@ -111,12 +131,31 @@ public class PCManager {
 	 */
 	public void player_new(String pc_id, JSONObject param) {
 		try {
-			String play_id = param.getString("play_id");
-			int view_id = param.getInt("view_id");
+			// 解析JSON字符串到JSON对象
+			String player_id = param.getString("play_id");
+			String view_id = param.getString("view_id");
+			String stream_kind = param.getString("stream_kind");
 			
+			// 根据view_id获得视图
 			VideoStreamsView vsv = map_view.get(view_id);
-			VideoPlayer view_player = new VideoPlayer(vsv);
-			map_player.put(play_id, view_player);
+			
+			// 根据媒体流类型获得视频轨
+			VideoTrack video_track = null;
+			
+			if(stream_kind == "local") {
+				MediaStream media_stream_local = map_pc.get(pc_id).media_stream_local;
+				video_track = media_stream_local.videoTracks.get(0);
+			} else {
+				MediaStream media_stream_remote = map_pc.get(pc_id).media_stream_remote;
+				video_track = media_stream_remote.videoTracks.get(0);
+			}
+			
+			// 绑定视图到视频轨
+			VideoPlayer player = new VideoPlayer(player_id, vsv, video_track);
+			
+			// 将刚新播放器放入播放器map容器
+			map_player.put(player_id, player);
+			
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -127,11 +166,11 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public void player_delete(String pc_id, JSONObject param) {
+	public void player_delete(JSONObject param) {
 		try {
-			String play_id = param.getString("play_id");
+			String player_id = param.getString("player_id");
 			
-			map_player.remove(play_id);
+			map_player.remove(player_id);			
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -149,7 +188,7 @@ public class PCManager {
 			int height = param.getInt("height");
 			
 			Point displaySize = new Point(width, height);		
-			VideoStreamsView vsv = new VideoStreamsView(room_activity, displaySize);
+			VideoStreamsView vsv = new VideoStreamsView(view_id, room_context, displaySize);
 			map_view.put(view_id, vsv);
 			layout_line.addView(vsv);
 		} catch (JSONException e) {
@@ -192,9 +231,9 @@ public class PCManager {
 		MediaConstraints videoConstraints = null;
 		if(media_stream_local == null) {
 			media_stream_local = pc_factory.createLocalMediaStream("ARDAMS");
-			video_capturer = get_video_capturer();
-			video_source = pc_factory.createVideoSource(video_capturer, videoConstraints);
-			video_track = pc_factory.createVideoTrack("ARDAMSv0", video_source);
+			VideoCapturer video_capturer = get_video_capturer();
+			VideoSource video_source = pc_factory.createVideoSource(video_capturer, videoConstraints);
+			VideoTrack video_track = pc_factory.createVideoTrack("ARDAMSv0", video_source);
 			
 			media_stream_local.addTrack(video_track);
 			media_stream_local.addTrack(pc_factory.createAudioTrack("ARDAMSa0"));

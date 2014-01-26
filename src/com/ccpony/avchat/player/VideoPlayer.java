@@ -7,16 +7,17 @@ import org.webrtc.VideoTrack;
 import com.ccpony.avchat.view.VideoStreamsView;
 
 public class VideoPlayer {
-	public VideoTrack videoTrack;
-	
-	public VideoPlayer(VideoStreamsView vsv) {
+	public String player_id = "";
+	public VideoStreamsView vsv = null;
+
+	public VideoPlayer(String player_id, VideoStreamsView vsv, VideoTrack videoTrack) {
+		this.player_id = player_id;
+		this.vsv = vsv;
+		
 		videoTrack.addRenderer(new VideoRenderer(new VideoCallbacks(vsv,
-			VideoStreamsView.Endpoint.LOCAL)));
+				VideoStreamsView.Endpoint.LOCAL)));
 	}
-	
-	// Implementation detail: bridge the VideoRenderer.Callbacks interface to
-	// the
-	// VideoStreamsView implementation.
+
 	private class VideoCallbacks implements VideoRenderer.Callbacks {
 		private final VideoStreamsView view;
 		private final VideoStreamsView.Endpoint stream;
@@ -41,5 +42,4 @@ public class VideoPlayer {
 			view.queueFrame(stream, frame);
 		}
 	}
-
 }
