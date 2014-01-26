@@ -22,35 +22,37 @@ import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCManager {
 	private WebView js_runtime = null;
-	private Activity activity = null;
-	private HashMap<String, PCWrapper> pc_map = new HashMap<String, PCWrapper>();
-	private HashMap<String, VideoPlayer> player_map = new HashMap<String, VideoPlayer>();
-	private HashMap<String, VideoStreamsView> view_map = new HashMap<String, VideoStreamsView>();	
-	private LinearLayout line_layout = null;	
+	private Activity room_activity = null;
+	private HashMap<String, PCWrapper> map_pc = new HashMap<String, PCWrapper>();
+	private HashMap<String, VideoPlayer> map_player = new HashMap<String, VideoPlayer>();
+	private HashMap<String, VideoStreamsView> map_view = new HashMap<String, VideoStreamsView>();	
+	private LinearLayout layout_line = null;	
 	
-	private MediaStream localMediaStream = null;
-	private VideoTrack videoTrack = null;
-	private VideoSource videoSource = null;
-	private VideoCapturer videoCapturer = null;
-	private PeerConnectionFactory factory = null;
-	//private MediaConstraints videoConstraints = null;	
+	private MediaStream media_stream_local = null;
+	private VideoTrack video_track = null;
+	private VideoSource video_source = null;
+	private VideoCapturer video_capturer = null;
+	private PeerConnectionFactory pc_factory = null;
 	
-	
-	public PCManager(WebView js_runtime, Activity activity) {
+	public PCManager(WebView js_runtime, Activity room_activity) {
 		this.js_runtime = js_runtime;
-		this.activity = activity;
+		this.room_activity = room_activity;
 		
-		this.line_layout = new LinearLayout(activity);
-		this.factory = new PeerConnectionFactory();
+		this.layout_line = new LinearLayout(room_activity);
+		this.pc_factory = new PeerConnectionFactory();
+	}
+	
+	public LinearLayout get_line_layout() {
+		return layout_line;
 	}
 	
 	public PeerConnectionFactory get_pc_factory() {
-		return factory;
+		return pc_factory;
 	}
 
 	@JavascriptInterface
 	public void call_method(String method, String pc_id, String param_str) {
-		PCWrapper pc_wrapper = pc_map.get(pc_id);
+		PCWrapper pc_wrapper = map_pc.get(pc_id);
 		JSONObject param = null;
 		try {
 			param = new JSONObject(param_str);
@@ -60,11 +62,11 @@ public class PCManager {
 		
 		if(method == "pc_new") {
 			pc_wrapper = new PCWrapper(this, pc_id);
-			pc_map.put(pc_id, pc_wrapper);
+			map_pc.put(pc_id, pc_wrapper);
 		} else if(method == "addStream") {
-			pc_wrapper.addStream(localMediaStream);	 
+			pc_wrapper.addStream(media_stream_local);	 
 		} else if(method == "removeStream") {
-			pc_wrapper.removeStream(localMediaStream);
+			pc_wrapper.removeStream(media_stream_local);
 		} else if(method == "close") {
 			pc_wrapper.close();
 		} else if(method == "createAnswer") {
@@ -112,9 +114,9 @@ public class PCManager {
 			String play_id = param.getString("play_id");
 			int view_id = param.getInt("view_id");
 			
-			VideoStreamsView vsv = view_map.get(view_id);
+			VideoStreamsView vsv = map_view.get(view_id);
 			VideoPlayer view_player = new VideoPlayer(vsv);
-			player_map.put(play_id, view_player);
+			map_player.put(play_id, view_player);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -129,7 +131,7 @@ public class PCManager {
 		try {
 			String play_id = param.getString("play_id");
 			
-			player_map.remove(play_id);
+			map_player.remove(play_id);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -147,9 +149,9 @@ public class PCManager {
 			int height = param.getInt("height");
 			
 			Point displaySize = new Point(width, height);		
-			VideoStreamsView vsv = new VideoStreamsView(activity, displaySize);
-			view_map.put(view_id, vsv);
-			line_layout.addView(vsv);
+			VideoStreamsView vsv = new VideoStreamsView(room_activity, displaySize);
+			map_view.put(view_id, vsv);
+			layout_line.addView(vsv);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -165,8 +167,8 @@ public class PCManager {
 		try {
 			String view_id = param.getString("view_id");
 			
-			VideoStreamsView vsv = view_map.remove(view_id);
-			line_layout.removeView(vsv);
+			VideoStreamsView vsv = map_view.remove(view_id);
+			layout_line.removeView(vsv);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -178,7 +180,7 @@ public class PCManager {
 	 * @return
 	 */
 	public void mediastream_stop(JSONObject param) {
-		localMediaStream.dispose();
+		media_stream_local.dispose();
 	}
 	
 	/**
@@ -188,14 +190,14 @@ public class PCManager {
 	 */
 	public void get_user_media(JSONObject param) {		
 		MediaConstraints videoConstraints = null;
-		if(localMediaStream == null) {
-			localMediaStream = factory.createLocalMediaStream("ARDAMS");
-			videoCapturer = getVideoCapturer();
-			videoSource = factory.createVideoSource(videoCapturer, videoConstraints);
-			videoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
+		if(media_stream_local == null) {
+			media_stream_local = pc_factory.createLocalMediaStream("ARDAMS");
+			video_capturer = get_video_capturer();
+			video_source = pc_factory.createVideoSource(video_capturer, videoConstraints);
+			video_track = pc_factory.createVideoTrack("ARDAMSv0", video_source);
 			
-			localMediaStream.addTrack(videoTrack);
-			localMediaStream.addTrack(factory.createAudioTrack("ARDAMSa0"));
+			media_stream_local.addTrack(video_track);
+			media_stream_local.addTrack(pc_factory.createAudioTrack("ARDAMSa0"));
 		}
 		
 		JSONObject cb_param = new JSONObject();
@@ -212,7 +214,7 @@ public class PCManager {
 	 * 私有方法，主要打开本地camera设备
 	 * @return
 	 */
-	private VideoCapturer getVideoCapturer() {
+	private VideoCapturer get_video_capturer() {
 		String[] cameraFacing = { "front", "back" };
 		int[] cameraIndex = { 0, 1 };
 		int[] cameraOrientation = { 0, 90, 180, 270 };
