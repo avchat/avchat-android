@@ -2,6 +2,7 @@ package com.ccpony.avchat.peerconnection;
 
 import java.util.HashMap;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.MediaConstraints;
@@ -228,7 +229,22 @@ public class PCManager {
 	 * @return
 	 */
 	public void get_user_media(JSONObject param) {		
-		MediaConstraints videoConstraints = null;
+		MediaConstraints videoConstraints = new MediaConstraints();
+		int error = 0;
+		try {
+			JSONArray json_a = param.getJSONArray("constraints");
+			for(int i=0;i<json_a.length();i++) {
+				JSONObject json_obj = json_a.getJSONObject(i);
+				String key = json_obj.getString("key");
+				String value = json_obj.getString("value");
+				MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair(key,value);
+				videoConstraints.mandatory.add(kv);
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+			error = 1;
+		}
+		
 		if(media_stream_local == null) {
 			media_stream_local = pc_factory.createLocalMediaStream("ARDAMS");
 			VideoCapturer video_capturer = get_video_capturer();
@@ -237,14 +253,20 @@ public class PCManager {
 			
 			media_stream_local.addTrack(video_track);
 			media_stream_local.addTrack(pc_factory.createAudioTrack("ARDAMSa0"));
+			
+			if(video_capturer == null)
+				error = 2;
 		}
 		
 		JSONObject cb_param = new JSONObject();
 		try {
 			cb_param.put("pc_id", "0");
 			cb_param.put("stream_type", "local");
+			if(error > 0)
+				cb_param.put("error", error);
 		} catch (JSONException e) {
 			e.printStackTrace();
+			error = 3;
 		}
 		this.cb_method("cb_getUserMedia", "0", cb_param);
 	}
