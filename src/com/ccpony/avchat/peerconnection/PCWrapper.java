@@ -2,6 +2,7 @@ package com.ccpony.avchat.peerconnection;
 
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
@@ -225,9 +226,20 @@ public class PCWrapper {
 	 */
 	public void createOffer(JSONObject param) {
 		MediaConstraints videoConstraints = new MediaConstraints();
-		MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair("","");
-		videoConstraints.mandatory.add(kv);
-		pc.createOffer(sdpObserver, videoConstraints);
+		try {
+			JSONArray json_a = param.getJSONArray("constraints");
+			for(int i=0;i<json_a.length();i++) {
+				JSONObject json_obj = json_a.getJSONObject(i);
+				String key = json_obj.getString("key");
+				String value = json_obj.getString("value");
+				MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair(key,value);
+				videoConstraints.mandatory.add(kv);
+			}
+			
+			pc.createOffer(sdpObserver, videoConstraints);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -237,9 +249,20 @@ public class PCWrapper {
 	 */
 	public void createAnswer(JSONObject param) {
 		MediaConstraints videoConstraints = new MediaConstraints();
-		MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair("","");
-		videoConstraints.mandatory.add(kv);
-		pc.createAnswer(sdpObserver, videoConstraints);
+		try {
+			JSONArray json_a = param.getJSONArray("constraints");
+			for(int i=0;i<json_a.length();i++) {
+				JSONObject json_obj = json_a.getJSONObject(i);
+				String key = json_obj.getString("key");
+				String value = json_obj.getString("value");
+				MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair(key,value);
+				videoConstraints.mandatory.add(kv);
+			}
+			
+			pc.createAnswer(sdpObserver, videoConstraints);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**

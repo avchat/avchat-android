@@ -134,7 +134,7 @@ public class PCManager {
 			// 解析JSON字符串到JSON对象
 			String player_id = param.getString("play_id");
 			String view_id = param.getString("view_id");
-			String stream_kind = param.getString("stream_kind");
+			String stream_type = param.getString("stream_type");
 			
 			// 根据view_id获得视图
 			VideoStreamsView vsv = map_view.get(view_id);
@@ -142,7 +142,7 @@ public class PCManager {
 			// 根据媒体流类型获得视频轨
 			VideoTrack video_track = null;
 			
-			if(stream_kind == "local") {
+			if(stream_type == "local") {
 				MediaStream media_stream_local = map_pc.get(pc_id).media_stream_local;
 				video_track = media_stream_local.videoTracks.get(0);
 			} else {

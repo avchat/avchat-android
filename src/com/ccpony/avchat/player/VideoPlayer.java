@@ -8,11 +8,9 @@ import com.ccpony.avchat.view.VideoStreamsView;
 
 public class VideoPlayer {
 	public String player_id = "";
-	public VideoStreamsView vsv = null;
 
 	public VideoPlayer(String player_id, VideoStreamsView vsv, VideoTrack videoTrack) {
 		this.player_id = player_id;
-		this.vsv = vsv;
 		
 		videoTrack.addRenderer(new VideoRenderer(new VideoCallbacks(vsv,
 				VideoStreamsView.Endpoint.LOCAL)));
