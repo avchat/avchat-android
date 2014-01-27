@@ -291,8 +291,12 @@ public class PCManager {
 	 */
 	public void get_user_media(JSONObject param) {	
 		// 根据JSON对象，创建本地流参数
+		
 		MediaConstraints videoConstraints = new MediaConstraints();
 		try {
+			JSONObject json_pc_config = param.getJSONObject("pc_config");
+			JSONObject json_con = param.getJSONObject("con");
+			
 			JSONArray json_a = param.getJSONArray("constraints");
 			for(int i=0;i<json_a.length();i++) {
 				JSONObject json_obj = json_a.getJSONObject(i);

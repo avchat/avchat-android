@@ -41,7 +41,7 @@ public class PCWrapper {
 		factory = pcManager.get_pc_factory();
 		
 		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
-				"RtpDataChannels", "true"));
+				"RtpDataChannels", "false"));
 
 		pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);	
 	}
