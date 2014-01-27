@@ -84,7 +84,7 @@ public class PCManager {
 		// 对调用进行分发处理
 		if(method.equals("pc_new")) {
 			// 创建新的pc封装对象
-			pc_wrapper = new PCWrapper(pc_id, this);
+			pc_wrapper = new PCWrapper(pc_id, this, param);
 			
 			// 放入map_pc容器
 			map_pc.put(pc_id, pc_wrapper);

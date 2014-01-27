@@ -34,7 +34,7 @@ public class PCWrapper {
 	 * @param activity
 	 * @param pcManager
 	 */
-	public PCWrapper(String pc_id, PCManager pcManager) {
+	public PCWrapper(String pc_id, PCManager pcManager, JSONObject param) {
 		this.pc_id = pc_id;
 		this.pcManager = pcManager;		
 		
