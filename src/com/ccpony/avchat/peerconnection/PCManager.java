@@ -2,6 +2,7 @@ package com.ccpony.avchat.peerconnection;
 
 import java.util.HashMap;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.MediaConstraints;
@@ -32,6 +33,11 @@ public class PCManager {
 	
 	private MediaStream media_stream_local = null;
 		
+	/**
+	 * PCManager构造函数
+	 * @param js_runtime
+	 * @param room_context
+	 */
 	public PCManager(WebView js_runtime, Context room_context) {
 		this.js_runtime = js_runtime;
 		this.room_context = room_context;
@@ -40,14 +46,28 @@ public class PCManager {
 		this.pc_factory = new PeerConnectionFactory();
 	}
 	
+	/**
+	 * 获取PC工厂
+	 * @return
+	 */
 	public PeerConnectionFactory get_pc_factory() {
 		return pc_factory;
 	}
 	
+	/**
+	 * 获取布局
+	 * @return
+	 */
 	public LinearLayout get_line_layout() {
 		return layout_line;
 	}
 	
+	/**
+	 * javascript代理调用此方法，然后进行调用分发
+	 * @param method
+	 * @param pc_id
+	 * @param param_str
+	 */
 	@JavascriptInterface
 	public void call_method(String method, String pc_id, String param_str) {
 		// 获取PCWrapper对象
@@ -63,63 +83,88 @@ public class PCManager {
 		
 		// 对调用进行分发处理
 		if(method.equals("pc_new")) {
+			// 创建新的pc封装对象
 			pc_wrapper = new PCWrapper(pc_id, this);
+			
+			// 放入map_pc容器
 			map_pc.put(pc_id, pc_wrapper);
 			
 		} else if(method.equals("addStream")) {
+			// 添加本地流
 			pc_wrapper.addStream(media_stream_local);
 			
 		} else if(method.equals("removeStream")) {
+			// 移除本地流
 			pc_wrapper.removeStream(media_stream_local);
 			
 		} else if(method.equals("close")) {
+			// 关闭pc连接
 			pc_wrapper.close();
 			
 		} else if(method.equals("createAnswer")) {
+			// 创建answer包
 			pc_wrapper.createAnswer(param);
 			
 		} else if(method.equals("createOffer")) {
+			// 创建offer包
 			pc_wrapper.createOffer(param);
 			
 		} else if(method.equals("createDataChannel")) {
+			// 数据功能暂不实现
 			pc_wrapper.createDataChannel(param);
 			
 		} else if(method.equals("setLocalDescription")) {
+			// 设置本地描述
 			pc_wrapper.setLocalDescription(param);
 			
 		} else if(method.equals("setRemoteDescription")) {
+			// 设置远程描述
 			pc_wrapper.setRemoteDescription(param);
 			
 		} else if(method.equals("updateIce")) {
+			// 更新ICE server
 			pc_wrapper.updateIce(param);
 			
 		} else if(method.equals("addIceCandidate")) {
+			// 增加ICE候选点
 			pc_wrapper.addIceCandidate(param);
 			
 		} else if(method.equals("getStats")) {
 			/*pc_wrapper.getStats(param);*/
 			
 		} else if(method.equals("mediastream_stop")) {
+			// 停止本地流
 			this.mediastream_stop(param);
 			
 		} else if(method.equals("player_new")) {
+			// 新建并绑定播放器到某视图
 			this.player_new(pc_id, param);
 			
 		} else if(method.equals("player_delete")) {
+			// 删除并解除绑定播放器
 			this.player_delete(param);
 			
 		} else if(method.equals("view_new")) {
+			// 新建视图
 			this.view_new(param);
 			
 		} else if(method.equals("view_delete")) {
+			// 删除视图
 			this.view_delete(param);
 			
 		} else if(method.equals("get_user_media")) {
+			// 获取本地媒体流
 			this.get_user_media(param);
 			
 		}
 	}
 	
+	/**
+	 * 被java pc调用，从而进行js端的回调
+	 * @param method
+	 * @param pc_id
+	 * @param param
+	 */
 	public void cb_method(String method, String pc_id, JSONObject param) {
 		js_runtime.loadUrl("javascript:pcManagerJS.cb_method("+ method + "," + pc_id + "," + param.toString() + ")");
 	}
@@ -168,8 +213,10 @@ public class PCManager {
 	 */
 	public void player_delete(JSONObject param) {
 		try {
+			// 获取播放器ID
 			String player_id = param.getString("player_id");
 			
+			// 删除播放器
 			map_player.remove(player_id);			
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -183,13 +230,20 @@ public class PCManager {
 	 */
 	public void view_new(JSONObject param) {
 		try {
+			// 通过JSON对象获取视图相关参数
 			String view_id = param.getString("view_id");
 			int width = param.getInt("width");
 			int height = param.getInt("height");
 			
-			Point displaySize = new Point(width, height);		
+			Point displaySize = new Point(width, height);
+			
+			// 新建视图
 			VideoStreamsView vsv = new VideoStreamsView(view_id, room_context, displaySize);
+			
+			// 将视图放入map_view容器
 			map_view.put(view_id, vsv);
+			
+			// 将视图加入布局
 			layout_line.addView(vsv);
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -204,9 +258,13 @@ public class PCManager {
 	 */
 	public void view_delete(JSONObject param) {
 		try {
+			// 通过JSON对象获取视图ID
 			String view_id = param.getString("view_id");
 			
+			// 删除视图
 			VideoStreamsView vsv = map_view.remove(view_id);
+			
+			// 从布局中移除视图
 			layout_line.removeView(vsv);
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -219,7 +277,11 @@ public class PCManager {
 	 * @return
 	 */
 	public void mediastream_stop(JSONObject param) {
+		// 停止本地流
 		media_stream_local.dispose();
+		
+		// 将本地流设置为空
+		media_stream_local = null;
 	}
 	
 	/**
@@ -227,8 +289,23 @@ public class PCManager {
 	 * @param param
 	 * @return
 	 */
-	public void get_user_media(JSONObject param) {		
-		MediaConstraints videoConstraints = null;
+	public void get_user_media(JSONObject param) {	
+		// 根据JSON对象，创建本地流参数
+		MediaConstraints videoConstraints = new MediaConstraints();
+		try {
+			JSONArray json_a = param.getJSONArray("constraints");
+			for(int i=0;i<json_a.length();i++) {
+				JSONObject json_obj = json_a.getJSONObject(i);
+				String key = json_obj.getString("key");
+				String value = json_obj.getString("value");
+				MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair(key,value);
+				videoConstraints.mandatory.add(kv);
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		// 获取本地流
 		if(media_stream_local == null) {
 			media_stream_local = pc_factory.createLocalMediaStream("ARDAMS");
 			VideoCapturer video_capturer = get_video_capturer();
@@ -239,6 +316,7 @@ public class PCManager {
 			media_stream_local.addTrack(pc_factory.createAudioTrack("ARDAMSa0"));
 		}
 		
+		// 产生本地流JSON对象
 		JSONObject cb_param = new JSONObject();
 		try {
 			cb_param.put("pc_id", "0");
@@ -246,6 +324,8 @@ public class PCManager {
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
+		
+		// 产生getusermedia回调
 		this.cb_method("cb_getUserMedia", "0", cb_param);
 	}
 	
