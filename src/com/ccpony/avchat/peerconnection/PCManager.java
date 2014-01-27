@@ -2,7 +2,6 @@ package com.ccpony.avchat.peerconnection;
 
 import java.util.HashMap;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.MediaConstraints;
@@ -63,59 +62,59 @@ public class PCManager {
 		}
 		
 		// 对调用进行分发处理
-		if(method == "pc_new") {
+		if(method.equals("pc_new")) {
 			pc_wrapper = new PCWrapper(pc_id, this);
 			map_pc.put(pc_id, pc_wrapper);
 			
-		} else if(method == "addStream") {
+		} else if(method.equals("addStream")) {
 			pc_wrapper.addStream(media_stream_local);
 			
-		} else if(method == "removeStream") {
+		} else if(method.equals("removeStream")) {
 			pc_wrapper.removeStream(media_stream_local);
 			
-		} else if(method == "close") {
+		} else if(method.equals("close")) {
 			pc_wrapper.close();
 			
-		} else if(method == "createAnswer") {
+		} else if(method.equals("createAnswer")) {
 			pc_wrapper.createAnswer(param);
 			
-		} else if(method == "createOffer") {
+		} else if(method.equals("createOffer")) {
 			pc_wrapper.createOffer(param);
 			
-		} else if(method == "createDataChannel") {
+		} else if(method.equals("createDataChannel")) {
 			pc_wrapper.createDataChannel(param);
 			
-		} else if(method == "setLocalDescription") {
+		} else if(method.equals("setLocalDescription")) {
 			pc_wrapper.setLocalDescription(param);
 			
-		} else if(method == "setRemoteDescription") {
+		} else if(method.equals("setRemoteDescription")) {
 			pc_wrapper.setRemoteDescription(param);
 			
-		} else if(method == "updateIce") {
+		} else if(method.equals("updateIce")) {
 			pc_wrapper.updateIce(param);
 			
-		} else if(method == "addIceCandidate") {
+		} else if(method.equals("addIceCandidate")) {
 			pc_wrapper.addIceCandidate(param);
 			
-		} else if(method == "getStats") {
+		} else if(method.equals("getStats")) {
 			/*pc_wrapper.getStats(param);*/
 			
-		} else if(method == "mediastream_stop") {
+		} else if(method.equals("mediastream_stop")) {
 			this.mediastream_stop(param);
 			
-		} else if(method == "player_new") {
+		} else if(method.equals("player_new")) {
 			this.player_new(pc_id, param);
 			
-		} else if(method == "player_delete") {
+		} else if(method.equals("player_delete")) {
 			this.player_delete(param);
 			
-		} else if(method == "view_new") {
+		} else if(method.equals("view_new")) {
 			this.view_new(param);
 			
-		} else if(method == "view_delete") {
+		} else if(method.equals("view_delete")) {
 			this.view_delete(param);
 			
-		} else if(method == "get_user_media") {
+		} else if(method.equals("get_user_media")) {
 			this.get_user_media(param);
 			
 		}
@@ -135,7 +134,7 @@ public class PCManager {
 			// 解析JSON字符串到JSON对象
 			String player_id = param.getString("play_id");
 			String view_id = param.getString("view_id");
-			String stream_type = param.getString("stream_type");
+			String stream_kind = param.getString("stream_kind");
 			
 			// 根据view_id获得视图
 			VideoStreamsView vsv = map_view.get(view_id);
@@ -143,7 +142,7 @@ public class PCManager {
 			// 根据媒体流类型获得视频轨
 			VideoTrack video_track = null;
 			
-			if(stream_type == "local") {
+			if(stream_kind == "local") {
 				MediaStream media_stream_local = map_pc.get(pc_id).media_stream_local;
 				video_track = media_stream_local.videoTracks.get(0);
 			} else {
@@ -229,22 +228,7 @@ public class PCManager {
 	 * @return
 	 */
 	public void get_user_media(JSONObject param) {		
-		MediaConstraints videoConstraints = new MediaConstraints();
-		int error = 0;
-		try {
-			JSONArray json_a = param.getJSONArray("constraints");
-			for(int i=0;i<json_a.length();i++) {
-				JSONObject json_obj = json_a.getJSONObject(i);
-				String key = json_obj.getString("key");
-				String value = json_obj.getString("value");
-				MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair(key,value);
-				videoConstraints.mandatory.add(kv);
-			}
-		} catch (JSONException e) {
-			e.printStackTrace();
-			error = 1;
-		}
-		
+		MediaConstraints videoConstraints = null;
 		if(media_stream_local == null) {
 			media_stream_local = pc_factory.createLocalMediaStream("ARDAMS");
 			VideoCapturer video_capturer = get_video_capturer();
@@ -253,20 +237,14 @@ public class PCManager {
 			
 			media_stream_local.addTrack(video_track);
 			media_stream_local.addTrack(pc_factory.createAudioTrack("ARDAMSa0"));
-			
-			if(video_capturer == null)
-				error = 2;
 		}
 		
 		JSONObject cb_param = new JSONObject();
 		try {
 			cb_param.put("pc_id", "0");
 			cb_param.put("stream_type", "local");
-			if(error > 0)
-				cb_param.put("error", error);
 		} catch (JSONException e) {
 			e.printStackTrace();
-			error = 3;
 		}
 		this.cb_method("cb_getUserMedia", "0", cb_param);
 	}
