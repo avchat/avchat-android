@@ -43,7 +43,11 @@ public class PCManager {
 		this.room_context = room_context;
 		
 		this.layout_line = new LinearLayout(room_context);
-		this.pc_factory = new PeerConnectionFactory();
+//		try{
+		//this.pc_factory = new PeerConnectionFactory();
+//		}catch(Exception e) {
+//			e.printStackTrace();
+//		}
 	}
 	
 	/**
@@ -291,6 +295,7 @@ public class PCManager {
 	 */
 	public void get_user_media(JSONObject param) {	
 		// 根据JSON对象，创建本地流参数
+		System.out.println(param);
 		MediaConstraints videoConstraints = new MediaConstraints();
 		try {
 			JSONArray json_a = param.getJSONArray("constraints");

@@ -2,12 +2,15 @@ package com.ccpony.avchat;
 
 import android.app.Activity;
 import android.util.Log;
+import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import com.ccpony.avchat.peerconnection.PCManager;
 
 public class JSController {
+	protected static final String TAG = "JSController";
 	private WebView js_runtime = null;
 
 	public JSController(Activity activity) {
@@ -15,13 +18,21 @@ public class JSController {
 		js_runtime.getSettings().setJavaScriptEnabled(true);
 		
 		// 调试支持用
-		js_runtime.setWebChromeClient(new WebChromeClient() {
-			public void onConsoleMessage(String message, int lineNumber,
-					String sourceID) {
-				Log.d("js_runtime", message + " -- From line " + lineNumber
-						+ " of " + sourceID);
-			}
-		});
+		js_runtime.setWebChromeClient(new WebChromeClient() {  // Purely for debugging.
+	        public boolean onConsoleMessage (ConsoleMessage msg) {
+	          Log.d(TAG, "console: " + msg.message() + " at " +
+	              msg.sourceId() + ":" + msg.lineNumber());
+	          return false;
+	        }
+	      });
+		js_runtime.setWebViewClient(new WebViewClient() {  // Purely for debugging.
+	        public void onReceivedError(
+	            WebView view, int errorCode, String description,
+	            String failingUrl) {
+	          Log.e(TAG, "JS error: " + errorCode + " in " + failingUrl +
+	              ", desc: " + description);
+	        }
+	      });
 	}
 
 	public WebView get_webView() {
