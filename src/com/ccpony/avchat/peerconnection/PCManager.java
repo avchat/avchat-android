@@ -43,11 +43,7 @@ public class PCManager {
 		this.room_context = room_context;
 		
 		this.layout_line = new LinearLayout(room_context);
-//		try{
-		//this.pc_factory = new PeerConnectionFactory();
-//		}catch(Exception e) {
-//			e.printStackTrace();
-//		}
+		this.pc_factory = new PeerConnectionFactory();
 	}
 	
 	/**
@@ -88,7 +84,7 @@ public class PCManager {
 		// 对调用进行分发处理
 		if(method.equals("pc_new")) {
 			// 创建新的pc封装对象
-			pc_wrapper = new PCWrapper(pc_id, this);
+			pc_wrapper = new PCWrapper(pc_id, this, param);
 			
 			// 放入map_pc容器
 			map_pc.put(pc_id, pc_wrapper);
@@ -295,9 +291,12 @@ public class PCManager {
 	 */
 	public void get_user_media(JSONObject param) {	
 		// 根据JSON对象，创建本地流参数
-		System.out.println(param);
+		
 		MediaConstraints videoConstraints = new MediaConstraints();
 		try {
+			JSONObject json_pc_config = param.getJSONObject("pc_config");
+			JSONObject json_con = param.getJSONObject("con");
+			
 			JSONArray json_a = param.getJSONArray("constraints");
 			for(int i=0;i<json_a.length();i++) {
 				JSONObject json_obj = json_a.getJSONObject(i);

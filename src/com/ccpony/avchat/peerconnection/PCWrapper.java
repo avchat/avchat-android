@@ -34,14 +34,14 @@ public class PCWrapper {
 	 * @param activity
 	 * @param pcManager
 	 */
-	public PCWrapper(String pc_id, PCManager pcManager) {
+	public PCWrapper(String pc_id, PCManager pcManager, JSONObject param) {
 		this.pc_id = pc_id;
 		this.pcManager = pcManager;		
 		
 		factory = pcManager.get_pc_factory();
 		
 		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
-				"RtpDataChannels", "true"));
+				"RtpDataChannels", "false"));
 
 		pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);	
 	}
