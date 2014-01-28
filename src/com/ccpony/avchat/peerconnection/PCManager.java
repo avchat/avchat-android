@@ -18,12 +18,13 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.LinearLayout;
 
+import com.ccpony.avchat.MainActivity;
 import com.ccpony.avchat.player.VideoPlayer;
 import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCManager {
 	private WebView js_runtime = null;
-	private Context room_context = null;	
+	private MainActivity room_context = null;	
 	private PeerConnectionFactory pc_factory = null;
 	
 	private HashMap<String, PCWrapper> map_pc = new HashMap<String, PCWrapper>();
@@ -38,11 +39,12 @@ public class PCManager {
 	 * @param js_runtime
 	 * @param room_context
 	 */
-	public PCManager(WebView js_runtime, Context room_context) {
+	public PCManager(WebView js_runtime, MainActivity room_context, LinearLayout line) {
 		this.js_runtime = js_runtime;
 		this.room_context = room_context;
 		
-		this.layout_line = new LinearLayout(room_context);
+		//this.layout_line = new LinearLayout(room_context);
+		this.layout_line = line;
 		this.pc_factory = new PeerConnectionFactory();
 	}
 	
@@ -179,23 +181,25 @@ public class PCManager {
 			// 解析JSON字符串到JSON对象
 			String player_id = param.getString("play_id");
 			String view_id = param.getString("view_id");
-			String stream_kind = param.getString("stream_kind");
+			String stream_type = param.getString("stream_type");
 			
 			// 根据view_id获得视图
 			VideoStreamsView vsv = map_view.get(view_id);
 			
 			// 根据媒体流类型获得视频轨
-			VideoTrack video_track = null;
+			/*VideoTrack video_track = null;
 			
-			if(stream_kind == "local") {
+			if(stream_type == "local") {
 				MediaStream media_stream_local = map_pc.get(pc_id).media_stream_local;
 				video_track = media_stream_local.videoTracks.get(0);
 			} else {
 				MediaStream media_stream_remote = map_pc.get(pc_id).media_stream_remote;
 				video_track = media_stream_remote.videoTracks.get(0);
-			}
+			}*/
 			
 			// 绑定视图到视频轨
+			VideoTrack video_track = null;
+			video_track = media_stream_local.videoTracks.get(0);
 			VideoPlayer player = new VideoPlayer(player_id, vsv, video_track);
 			
 			// 将刚新播放器放入播放器map容器
@@ -244,8 +248,11 @@ public class PCManager {
 			map_view.put(view_id, vsv);
 			
 			// 将视图加入布局
-			layout_line.addView(vsv);
+			//layout_line.addView(vsv);
+			this.room_context.add_view(layout_line, vsv);
 		} catch (JSONException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
@@ -288,23 +295,39 @@ public class PCManager {
 	 * 创建本地流
 	 * @param param
 	 * @return
+	 * @throws JSONException 
 	 */
 	public void get_user_media(JSONObject param) {	
 		// 根据JSON对象，创建本地流参数
 		
 		MediaConstraints videoConstraints = new MediaConstraints();
 		try {
-			JSONObject json_pc_config = param.getJSONObject("pc_config");
-			JSONObject json_con = param.getJSONObject("con");
-			
-			JSONArray json_a = param.getJSONArray("constraints");
-			for(int i=0;i<json_a.length();i++) {
-				JSONObject json_obj = json_a.getJSONObject(i);
-				String key = json_obj.getString("key");
-				String value = json_obj.getString("value");
-				MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair(key,value);
-				videoConstraints.mandatory.add(kv);
-			}
+			JSONObject json = param.optJSONObject("video");
+	        JSONObject mandatoryJSON = json.optJSONObject("mandatory");
+//	        if (mandatoryJSON != null) {
+//	          JSONArray mandatoryKeys = mandatoryJSON.names();
+//	          if (mandatoryKeys != null) {
+//	            for (int i = 0; i < mandatoryKeys.length(); ++i) {
+//	              String key = mandatoryKeys.getString(i);
+//	              String value = mandatoryJSON.getString(key);
+//	              videoConstraints.mandatory.add(
+//	                  new MediaConstraints.KeyValuePair(key, value));
+//	            }
+//	          }
+//	        }
+	        videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("width", "640"));
+	        videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("height", "480"));
+	        
+	        JSONArray optionalJSON = json.optJSONArray("optional");
+	        if (optionalJSON != null) {
+	          for (int i = 0; i < optionalJSON.length(); ++i) {
+	            JSONObject keyValueDict = optionalJSON.getJSONObject(i);
+	            String key = keyValueDict.names().getString(0);
+	            String value = keyValueDict.getString(key);
+	            videoConstraints.optional.add(
+	                new MediaConstraints.KeyValuePair(key, value));
+	          }
+	        }
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -312,7 +335,8 @@ public class PCManager {
 		// 获取本地流
 		if(media_stream_local == null) {
 			media_stream_local = pc_factory.createLocalMediaStream("ARDAMS");
-			VideoCapturer video_capturer = get_video_capturer();
+			VideoCapturer video_capturer = null;
+			video_capturer = get_video_capturer();
 			VideoSource video_source = pc_factory.createVideoSource(video_capturer, videoConstraints);
 			VideoTrack video_track = pc_factory.createVideoTrack("ARDAMSv0", video_source);
 			
