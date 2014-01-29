@@ -165,12 +165,8 @@ public class PCWrapper {
 		public void onCreateSuccess(final SessionDescription origSdp) {
 			JSONObject cb_param = new JSONObject();			
 			try {
-				cb_param.put("type", origSdp.type.canonicalForm());
-				//cb_param.put("sdp", origSdp.description);
-				String str = new String(origSdp.description);
-				str.replace("\\r\\n", "\\r\\n\\r\\n");
-				System.out.println(str);
-				cb_param.put("sdp", str);
+				cb_param.put("type", origSdp.type.canonicalForm());				
+				cb_param.put("sdp", origSdp.description);
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}

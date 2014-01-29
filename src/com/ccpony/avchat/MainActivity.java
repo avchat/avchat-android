@@ -15,7 +15,8 @@ import com.ccpony.avchat.view.VideoStreamsView;
 public class MainActivity extends Activity {
 	private JSController js_controller = null;
 	private PCManager pc_manager = null;
-	private String js_controller_url = "http://192.168.10.250:4444/index.html";
+	//private String js_controller_url = "http://192.168.10.250:4444/index.html";
+	private String js_controller_url = "http://192.168.1.201:3001/index.html";
 	public LinearLayout layout_line = null;
 
 	@Override
