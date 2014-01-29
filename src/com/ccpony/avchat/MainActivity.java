@@ -1,5 +1,6 @@
 package com.ccpony.avchat;
 
+import org.json.JSONObject;
 import org.webrtc.PeerConnectionFactory;
 
 import android.app.Activity;
@@ -14,12 +15,13 @@ import com.ccpony.avchat.view.VideoStreamsView;
 public class MainActivity extends Activity {
 	private JSController js_controller = null;
 	private PCManager pc_manager = null;
-	private String js_controller_url = "http://192.168.1.201:3001/index.html";
+	private String js_controller_url = "http://192.168.10.250:4444/index.html";
 	public LinearLayout layout_line = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+				
 		PeerConnectionFactory.initializeAndroidGlobals(this);
 
 		js_controller = new JSController(this);
@@ -52,6 +54,28 @@ public class MainActivity extends Activity {
 		runOnUiThread(new Runnable() {
 			public void run() {
 				line.addView(vsv);
+			}
+		});
+	}
+	
+	public void cb_method(final String method, final String pc_id, final JSONObject param) {
+		runOnUiThread(new Runnable() {
+			public void run() {
+				System.out.println(method);
+				System.out.println(pc_id);
+				System.out.println(param.toString());
+				js_controller.get_webView().loadUrl("javascript:pcManagerJS.cb_method('"+ method + "','" + pc_id + "','" + param.toString() + "')");
+			}
+		});
+	}
+	
+	public void cb_method(final String method, final String pc_id, final String param) {
+		runOnUiThread(new Runnable() {
+			public void run() {
+				System.out.println(method);
+				System.out.println("pc_id:"+pc_id);
+				//System.out.println(param);
+				js_controller.get_webView().loadUrl("javascript:pcManagerJS.cb_method('"+ method + "','" + pc_id + "',\"" + param + "\")");
 			}
 		});
 	}

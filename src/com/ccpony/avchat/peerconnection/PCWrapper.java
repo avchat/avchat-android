@@ -1,5 +1,6 @@
 package com.ccpony.avchat.peerconnection;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -21,8 +22,9 @@ public class PCWrapper {
 	
 	private String pc_id = "";		
 	private PeerConnection pc = null;	
-	private MediaConstraints pcConstraints = null;
-	private List<PeerConnection.IceServer> iceServers = null;
+	private MediaConstraints pcConstraints = new MediaConstraints();
+	private List<PeerConnection.IceServer> iceServers = new ArrayList<PeerConnection.IceServer>();
+	
 	private final PCObserver pcObserver = new PCObserver();
 	private final SDPObserver sdpObserver = new SDPObserver();
 	
@@ -40,9 +42,12 @@ public class PCWrapper {
 		
 		factory = pcManager.get_pc_factory();
 		
-		pcConstraints.optional.add(new MediaConstraints.KeyValuePair(
-				"RtpDataChannels", "false"));
-
+		pcConstraints.optional.add(new MediaConstraints.KeyValuePair("RtpDataChannels", "false"));
+		pcConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
+		
+		PeerConnection.IceServer ice = new PeerConnection.IceServer("stun:stun.l.google.com:19302");
+		this.iceServers.add(ice);
+		
 		pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);	
 	}
 
@@ -161,14 +166,18 @@ public class PCWrapper {
 			JSONObject cb_param = new JSONObject();			
 			try {
 				cb_param.put("type", origSdp.type.canonicalForm());
-				cb_param.put("sdp", origSdp.description);
+				//cb_param.put("sdp", origSdp.description);
+				String str = new String(origSdp.description);
+				str.replace("\\r\\n", "\\r\\n\\r\\n");
+				System.out.println(str);
+				cb_param.put("sdp", str);
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
 			
-			if (origSdp.type.canonicalForm() == "offer") {
+			if (origSdp.type.canonicalForm().equals("offer")) {
 				pcManager.cb_method("cb_createOffer", pc_id, cb_param);
-			} else if (origSdp.type.canonicalForm() == "answer") {
+			} else if (origSdp.type.canonicalForm().equals("answer")) {
 				pcManager.cb_method("cb_createAnswer", pc_id, cb_param);
 			}
 		}
@@ -227,14 +236,19 @@ public class PCWrapper {
 	public void createOffer(JSONObject param) {
 		MediaConstraints videoConstraints = new MediaConstraints();
 		try {
-			JSONArray json_a = param.getJSONArray("constraints");
-			for(int i=0;i<json_a.length();i++) {
-				JSONObject json_obj = json_a.getJSONObject(i);
-				String key = json_obj.getString("key");
-				String value = json_obj.getString("value");
-				MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair(key,value);
-				videoConstraints.mandatory.add(kv);
-			}
+			JSONObject mandatoryJSON = param.optJSONObject("mandatory");
+			
+	        if (mandatoryJSON != null) {
+	          JSONArray mandatoryKeys = mandatoryJSON.names();
+	          if (mandatoryKeys != null) {
+	            for (int i = 0; i < mandatoryKeys.length(); ++i) {
+	              String key = mandatoryKeys.getString(i);
+	              String value = mandatoryJSON.getString(key);
+	              videoConstraints.mandatory.add(
+	                  new MediaConstraints.KeyValuePair(key, value));
+	            }
+	          }
+	        }
 			
 			pc.createOffer(sdpObserver, videoConstraints);
 		} catch (JSONException e) {
@@ -250,14 +264,19 @@ public class PCWrapper {
 	public void createAnswer(JSONObject param) {
 		MediaConstraints videoConstraints = new MediaConstraints();
 		try {
-			JSONArray json_a = param.getJSONArray("constraints");
-			for(int i=0;i<json_a.length();i++) {
-				JSONObject json_obj = json_a.getJSONObject(i);
-				String key = json_obj.getString("key");
-				String value = json_obj.getString("value");
-				MediaConstraints.KeyValuePair kv = new MediaConstraints.KeyValuePair(key,value);
-				videoConstraints.mandatory.add(kv);
-			}
+			JSONObject mandatoryJSON = param.optJSONObject("mandatory");
+			
+	        if (mandatoryJSON != null) {
+	          JSONArray mandatoryKeys = mandatoryJSON.names();
+	          if (mandatoryKeys != null) {
+	            for (int i = 0; i < mandatoryKeys.length(); ++i) {
+	              String key = mandatoryKeys.getString(i);
+	              String value = mandatoryJSON.getString(key);
+	              videoConstraints.mandatory.add(
+	                  new MediaConstraints.KeyValuePair(key, value));
+	            }
+	          }
+	        }
 			
 			pc.createAnswer(sdpObserver, videoConstraints);
 		} catch (JSONException e) {

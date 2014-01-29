@@ -23,7 +23,7 @@ import com.ccpony.avchat.player.VideoPlayer;
 import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCManager {
-	private WebView js_runtime = null;
+	public WebView js_runtime = null;
 	private MainActivity room_context = null;	
 	private PeerConnectionFactory pc_factory = null;
 	
@@ -161,15 +161,7 @@ public class PCManager {
 		}
 	}
 	
-	/**
-	 * 被java pc调用，从而进行js端的回调
-	 * @param method
-	 * @param pc_id
-	 * @param param
-	 */
-	public void cb_method(String method, String pc_id, JSONObject param) {
-		js_runtime.loadUrl("javascript:pcManagerJS.cb_method("+ method + "," + pc_id + "," + param.toString() + ")");
-	}
+	
 	
 	/**
 	 * 创建新的视频播放器
@@ -356,6 +348,22 @@ public class PCManager {
 		// 产生getusermedia回调
 		this.cb_method("cb_getUserMedia", "0", cb_param);
 	}
+	
+	/**
+     * 被java pc调用，从而进行js端的回调
+     * @param method
+     * @param pc_id
+     * @param param
+     */
+	public void cb_method(String method, String pc_id, String param) {
+    	this.room_context.cb_method(method, pc_id, param);
+            //js_runtime.loadUrl("javascript:pcManagerJS.cb_method("+ method + "," + pc_id + "," + param.toString() + ")");
+    }
+	
+    public void cb_method(String method, String pc_id, JSONObject param) {
+    	this.room_context.cb_method(method, pc_id, param);
+            //js_runtime.loadUrl("javascript:pcManagerJS.cb_method("+ method + "," + pc_id + "," + param.toString() + ")");
+    }
 	
 	/**
 	 * 私有方法，主要打开本地camera设备
