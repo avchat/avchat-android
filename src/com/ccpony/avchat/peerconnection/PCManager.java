@@ -179,19 +179,19 @@ public class PCManager {
 			VideoStreamsView vsv = map_view.get(view_id);
 			
 			// 根据媒体流类型获得视频轨
-			/*VideoTrack video_track = null;
+			VideoTrack video_track = null;
 			
-			if(stream_type == "local") {
+			if(stream_type.equals("local")) {
 				MediaStream media_stream_local = map_pc.get(pc_id).media_stream_local;
 				video_track = media_stream_local.videoTracks.get(0);
 			} else {
 				MediaStream media_stream_remote = map_pc.get(pc_id).media_stream_remote;
 				video_track = media_stream_remote.videoTracks.get(0);
-			}*/
+			}
 			
 			// 绑定视图到视频轨
-			VideoTrack video_track = null;
-			video_track = media_stream_local.videoTracks.get(0);
+			//VideoTrack video_track = null;
+			//video_track = media_stream_local.videoTracks.get(0);
 			VideoPlayer player = new VideoPlayer(player_id, vsv, video_track);
 			
 			// 将刚新播放器放入播放器map容器
