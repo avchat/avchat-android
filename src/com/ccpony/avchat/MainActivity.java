@@ -33,8 +33,6 @@ public class MainActivity extends Activity {
 		// this.setContentView(pc_manager.get_line_layout());
 		this.setContentView(this.layout_line);
 		js_controller.start(js_controller_url, pc_manager);
-		System.out.println("onCreate");
-		Log.d("main", "oncreate");
 	}
 
 	@Override
@@ -62,21 +60,8 @@ public class MainActivity extends Activity {
 	public void cb_method(final String method, final String pc_id, final JSONObject param) {
 		runOnUiThread(new Runnable() {
 			public void run() {
-				System.out.println(method);
-				System.out.println(pc_id);
-				System.out.println(param.toString());
+				System.out.println("[pony86: java cb_method] " + method + "," + pc_id + "," + param.toString());
 				js_controller.get_webView().loadUrl("javascript:pcManagerJS.cb_method('"+ method + "','" + pc_id + "','" + param.toString() + "')");
-			}
-		});
-	}
-	
-	public void cb_method(final String method, final String pc_id, final String param) {
-		runOnUiThread(new Runnable() {
-			public void run() {
-				System.out.println(method);
-				System.out.println("pc_id:"+pc_id);
-				//System.out.println(param);
-				js_controller.get_webView().loadUrl("javascript:pcManagerJS.cb_method('"+ method + "','" + pc_id + "',\"" + param + "\")");
 			}
 		});
 	}

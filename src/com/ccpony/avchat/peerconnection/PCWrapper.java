@@ -2,6 +2,8 @@ package com.ccpony.avchat.peerconnection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,6 +17,8 @@ import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SessionDescription.Type;
+
+import android.util.Log;
 
 public class PCWrapper {
 	private PCManager pcManager = null;
@@ -154,6 +158,52 @@ public class PCWrapper {
 							+ " anyway!");
 		}
 	}
+	
+	// Mangle SDP to prefer ISAC/16000 over any other audio codec.
+		private String preferISAC(String sdpDescription) {
+			String[] lines = sdpDescription.split("\n");
+			int mLineIndex = -1;
+			String isac16kRtpMap = null;
+			Pattern isac16kPattern = Pattern
+					.compile("^a=rtpmap:(\\d+) ISAC/16000[\r]?$");
+			for (int i = 0; (i < lines.length)
+					&& (mLineIndex == -1 || isac16kRtpMap == null); ++i) {
+				if (lines[i].startsWith("m=audio ")) {
+					mLineIndex = i;
+					continue;
+				}
+				Matcher isac16kMatcher = isac16kPattern.matcher(lines[i]);
+				if (isac16kMatcher.matches()) {
+					isac16kRtpMap = isac16kMatcher.group(1);
+					continue;
+				}
+			}
+			if (mLineIndex == -1) {
+				return sdpDescription;
+			}
+			if (isac16kRtpMap == null) {
+				return sdpDescription;
+			}
+			String[] origMLineParts = lines[mLineIndex].split(" ");
+			StringBuilder newMLine = new StringBuilder();
+			int origPartIndex = 0;
+			// Format is: m=<media> <port> <proto> <fmt> ...
+			newMLine.append(origMLineParts[origPartIndex++]).append(" ");
+			newMLine.append(origMLineParts[origPartIndex++]).append(" ");
+			newMLine.append(origMLineParts[origPartIndex++]).append(" ");
+			newMLine.append(isac16kRtpMap).append(" ");
+			for (; origPartIndex < origMLineParts.length; ++origPartIndex) {
+				if (!origMLineParts[origPartIndex].equals(isac16kRtpMap)) {
+					newMLine.append(origMLineParts[origPartIndex]).append(" ");
+				}
+			}
+			lines[mLineIndex] = newMLine.toString();
+			StringBuilder newSdpDescription = new StringBuilder();
+			for (String line : lines) {
+				newSdpDescription.append(line).append("\n");
+			}
+			return newSdpDescription.toString();
+		}
 	  
 	/**
 	 * SDPObserver是set{Local,Remote}Description()和create{Offer,Answer}()的事件回调类
@@ -201,7 +251,7 @@ public class PCWrapper {
 	public void addStream(MediaStream localMediaStream) {
 		this.media_stream_local = localMediaStream;
 		
-		pc.addStream(media_stream_local, new MediaConstraints());
+		pc.addStream(localMediaStream, new MediaConstraints());
 	}
 	
 	/**
@@ -299,9 +349,9 @@ public class PCWrapper {
 		Type type = SessionDescription.Type.OFFER;
 		try {
 			String type_str = param.getString("type");
-			if(type_str == "offer") {
+			if(type_str.equals("offer")) {
 				type = SessionDescription.Type.OFFER;
-			} else if(type_str == "answer") {
+			} else if(type_str.equals("answer")) {
 				type = SessionDescription.Type.ANSWER;
 			}
 			sd = new SessionDescription(type, param.getString("sdp"));
@@ -322,9 +372,9 @@ public class PCWrapper {
 		Type type = SessionDescription.Type.OFFER;
 		try {
 			String type_str = param.getString("type");
-			if(type_str == "offer") {
+			if(type_str.equals("offer")) {
 				type = SessionDescription.Type.OFFER;
-			} else if(type_str == "answer") {
+			} else if(type_str.equals("answer")) {
 				type = SessionDescription.Type.ANSWER;
 			}
 			sd = new SessionDescription(type, param.getString("sdp"));

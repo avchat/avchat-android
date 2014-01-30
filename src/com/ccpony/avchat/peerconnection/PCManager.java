@@ -72,6 +72,7 @@ public class PCManager {
 	 */
 	@JavascriptInterface
 	public void call_method(String method, String pc_id, String param_str) {
+		System.out.println("[pony86: java call_method] " + method + "," + pc_id + "," + param_str);
 		// 获取PCWrapper对象
 		PCWrapper pc_wrapper = map_pc.get(pc_id);
 		
@@ -355,14 +356,8 @@ public class PCManager {
      * @param pc_id
      * @param param
      */
-	public void cb_method(String method, String pc_id, String param) {
-    	this.room_context.cb_method(method, pc_id, param);
-            //js_runtime.loadUrl("javascript:pcManagerJS.cb_method("+ method + "," + pc_id + "," + param.toString() + ")");
-    }
-	
     public void cb_method(String method, String pc_id, JSONObject param) {
     	this.room_context.cb_method(method, pc_id, param);
-            //js_runtime.loadUrl("javascript:pcManagerJS.cb_method("+ method + "," + pc_id + "," + param.toString() + ")");
     }
 	
 	/**
