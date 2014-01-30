@@ -235,7 +235,7 @@ public class PCWrapper {
 	 * @return
 	 */
 	public void addStream() {
-		// media
+//		// media
 		MediaConstraints Constraints = new MediaConstraints();
 		this.media_stream_local = factory.createLocalMediaStream("ARDAMS");
 		VideoCapturer capturer = get_video_capturer();
@@ -245,13 +245,14 @@ public class PCWrapper {
 		
 		media_stream_local.addTrack(videoTrack);
 		media_stream_local.addTrack(factory.createAudioTrack("ARDAMSa0"));
+//		
+//		Point displaySize = new Point(320, 240);
+//		
+//		// 新建视图
+//		VideoStreamsView vsv = new VideoStreamsView("view_local_0", pcManager.room_context, displaySize);
+//		pcManager.room_context.add_view(pcManager.get_line_layout(), vsv);
+//		VideoPlayer player = new VideoPlayer("local_stream_0", vsv, videoTrack);
 		
-		Point displaySize = new Point(320, 240);
-		
-		// 新建视图
-		VideoStreamsView vsv = new VideoStreamsView("view_local_0", pcManager.room_context, displaySize);
-		pcManager.room_context.add_view(pcManager.get_line_layout(), vsv);
-		VideoPlayer player = new VideoPlayer("local_stream_0", vsv, videoTrack);
 		pc.addStream(media_stream_local, new MediaConstraints());
 	}
 	

@@ -146,7 +146,7 @@ public class PCManager {
 			
 		} else if(method.equals("player_new")) {
 			// 新建并绑定播放器到某视图
-			//this.player_new(pc_id, param);
+			this.player_new(pc_id, param);
 			
 		} else if(method.equals("player_delete")) {
 			// 删除并解除绑定播放器
@@ -154,7 +154,7 @@ public class PCManager {
 			
 		} else if(method.equals("view_new")) {
 			// 新建视图
-			//this.view_new(param);
+			this.view_new(param);
 			
 		} else if(method.equals("view_delete")) {
 			// 删除视图
