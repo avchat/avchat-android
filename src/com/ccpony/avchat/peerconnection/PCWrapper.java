@@ -2,8 +2,6 @@ package com.ccpony.avchat.peerconnection;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,8 +15,14 @@ import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SessionDescription.Type;
+import org.webrtc.VideoCapturer;
+import org.webrtc.VideoSource;
+import org.webrtc.VideoTrack;
 
-import android.util.Log;
+import android.graphics.Point;
+
+import com.ccpony.avchat.player.VideoPlayer;
+import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCWrapper {
 	private PCManager pcManager = null;
@@ -44,15 +48,18 @@ public class PCWrapper {
 		this.pc_id = pc_id;
 		this.pcManager = pcManager;		
 		
-		factory = pcManager.get_pc_factory();
+		factory = new PeerConnectionFactory();
 		
-		pcConstraints.optional.add(new MediaConstraints.KeyValuePair("RtpDataChannels", "false"));
+		//pcConstraints.optional.add(new MediaConstraints.KeyValuePair("RtpDataChannels", "false"));
 		pcConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 		
 		PeerConnection.IceServer ice = new PeerConnection.IceServer("stun:stun.l.google.com:19302");
 		this.iceServers.add(ice);
 		
 		pc = factory.createPeerConnection(iceServers, pcConstraints, pcObserver);	
+		
+		
+		
 	}
 
 	/**
@@ -159,52 +166,6 @@ public class PCWrapper {
 		}
 	}
 	
-	// Mangle SDP to prefer ISAC/16000 over any other audio codec.
-		private String preferISAC(String sdpDescription) {
-			String[] lines = sdpDescription.split("\n");
-			int mLineIndex = -1;
-			String isac16kRtpMap = null;
-			Pattern isac16kPattern = Pattern
-					.compile("^a=rtpmap:(\\d+) ISAC/16000[\r]?$");
-			for (int i = 0; (i < lines.length)
-					&& (mLineIndex == -1 || isac16kRtpMap == null); ++i) {
-				if (lines[i].startsWith("m=audio ")) {
-					mLineIndex = i;
-					continue;
-				}
-				Matcher isac16kMatcher = isac16kPattern.matcher(lines[i]);
-				if (isac16kMatcher.matches()) {
-					isac16kRtpMap = isac16kMatcher.group(1);
-					continue;
-				}
-			}
-			if (mLineIndex == -1) {
-				return sdpDescription;
-			}
-			if (isac16kRtpMap == null) {
-				return sdpDescription;
-			}
-			String[] origMLineParts = lines[mLineIndex].split(" ");
-			StringBuilder newMLine = new StringBuilder();
-			int origPartIndex = 0;
-			// Format is: m=<media> <port> <proto> <fmt> ...
-			newMLine.append(origMLineParts[origPartIndex++]).append(" ");
-			newMLine.append(origMLineParts[origPartIndex++]).append(" ");
-			newMLine.append(origMLineParts[origPartIndex++]).append(" ");
-			newMLine.append(isac16kRtpMap).append(" ");
-			for (; origPartIndex < origMLineParts.length; ++origPartIndex) {
-				if (!origMLineParts[origPartIndex].equals(isac16kRtpMap)) {
-					newMLine.append(origMLineParts[origPartIndex]).append(" ");
-				}
-			}
-			lines[mLineIndex] = newMLine.toString();
-			StringBuilder newSdpDescription = new StringBuilder();
-			for (String line : lines) {
-				newSdpDescription.append(line).append("\n");
-			}
-			return newSdpDescription.toString();
-		}
-	  
 	/**
 	 * SDPObserver是set{Local,Remote}Description()和create{Offer,Answer}()的事件回调类
 	 * @author pony
@@ -244,14 +205,54 @@ public class PCWrapper {
 	}
 
 	/**
+	 * 私有方法，主要打开本地camera设备
+	 * @return
+	 */
+	private VideoCapturer get_video_capturer() {
+		String[] cameraFacing = { "front", "back" };
+		int[] cameraIndex = { 0, 1 };
+		int[] cameraOrientation = { 0, 90, 180, 270 };
+
+		for (String facing : cameraFacing) {
+			for (int index : cameraIndex) {
+				for (int orientation : cameraOrientation) {
+					String name = "Camera " + index + ", Facing " + facing
+							+ ", Orientation " + orientation;
+					VideoCapturer capturer = VideoCapturer.create(name);
+					if (capturer != null) {
+						return capturer;
+					}
+				}
+			}
+		}
+		
+		return null;
+	}	
+	
+	/**
 	 * 增加本地流
 	 * @param param
 	 * @return
 	 */
-	public void addStream(MediaStream localMediaStream) {
-		this.media_stream_local = localMediaStream;
+	public void addStream() {
+		// media
+		MediaConstraints Constraints = new MediaConstraints();
+		this.media_stream_local = factory.createLocalMediaStream("ARDAMS");
+		VideoCapturer capturer = get_video_capturer();
+		VideoSource videoSource = factory.createVideoSource(capturer,Constraints);
+		VideoTrack videoTrack = factory.createVideoTrack("ARDAMSv0",
+				videoSource);
 		
-		pc.addStream(localMediaStream, new MediaConstraints());
+		media_stream_local.addTrack(videoTrack);
+		media_stream_local.addTrack(factory.createAudioTrack("ARDAMSa0"));
+		
+		Point displaySize = new Point(320, 240);
+		
+		// 新建视图
+		VideoStreamsView vsv = new VideoStreamsView("view_local_0", pcManager.room_context, displaySize);
+		pcManager.room_context.add_view(pcManager.get_line_layout(), vsv);
+		VideoPlayer player = new VideoPlayer("local_stream_0", vsv, videoTrack);
+		pc.addStream(media_stream_local, new MediaConstraints());
 	}
 	
 	/**
@@ -259,8 +260,8 @@ public class PCWrapper {
 	 * @param param
 	 * @return
 	 */
-	public void removeStream(MediaStream localMediaStream) {		
-		pc.removeStream(localMediaStream);
+	public void removeStream() {		
+		pc.removeStream(media_stream_local);
 		
 		this.media_stream_local = null;
 	}

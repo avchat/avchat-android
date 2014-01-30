@@ -1,16 +1,20 @@
 package com.ccpony.avchat.peerconnection;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
+import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
+import org.webrtc.MediaConstraints.KeyValuePair;
 
 import android.content.Context;
 import android.graphics.Point;
@@ -24,15 +28,16 @@ import com.ccpony.avchat.view.VideoStreamsView;
 
 public class PCManager {
 	public WebView js_runtime = null;
-	private MainActivity room_context = null;	
+	public MainActivity room_context = null;	
 	private PeerConnectionFactory pc_factory = null;
 	
-	private HashMap<String, PCWrapper> map_pc = new HashMap<String, PCWrapper>();
+	public HashMap<String, PCWrapper> map_pc = new HashMap<String, PCWrapper>();
 	private HashMap<String, VideoPlayer> map_player = new HashMap<String, VideoPlayer>();
 	private HashMap<String, VideoStreamsView> map_view = new HashMap<String, VideoStreamsView>();	
 	private LinearLayout layout_line = null;	
 	
-	private MediaStream media_stream_local = null;
+	//private MediaStream media_stream_local = null;
+	//private VideoSource video_source = null;
 		
 	/**
 	 * PCManager构造函数
@@ -45,7 +50,7 @@ public class PCManager {
 		
 		//this.layout_line = new LinearLayout(room_context);
 		this.layout_line = line;
-		this.pc_factory = new PeerConnectionFactory();
+		this.pc_factory = null;
 	}
 	
 	/**
@@ -94,11 +99,11 @@ public class PCManager {
 			
 		} else if(method.equals("addStream")) {
 			// 添加本地流
-			pc_wrapper.addStream(media_stream_local);
+			pc_wrapper.addStream();
 			
 		} else if(method.equals("removeStream")) {
 			// 移除本地流
-			pc_wrapper.removeStream(media_stream_local);
+			pc_wrapper.removeStream();
 			
 		} else if(method.equals("close")) {
 			// 关闭pc连接
@@ -141,7 +146,7 @@ public class PCManager {
 			
 		} else if(method.equals("player_new")) {
 			// 新建并绑定播放器到某视图
-			this.player_new(pc_id, param);
+			//this.player_new(pc_id, param);
 			
 		} else if(method.equals("player_delete")) {
 			// 删除并解除绑定播放器
@@ -149,7 +154,7 @@ public class PCManager {
 			
 		} else if(method.equals("view_new")) {
 			// 新建视图
-			this.view_new(param);
+			//this.view_new(param);
 			
 		} else if(method.equals("view_delete")) {
 			// 删除视图
@@ -277,11 +282,6 @@ public class PCManager {
 	 * @return
 	 */
 	public void mediastream_stop(JSONObject param) {
-		// 停止本地流
-		media_stream_local.dispose();
-		
-		// 将本地流设置为空
-		media_stream_local = null;
 	}
 	
 	/**
@@ -294,9 +294,9 @@ public class PCManager {
 		// 根据JSON对象，创建本地流参数
 		
 		MediaConstraints videoConstraints = new MediaConstraints();
-		try {
-			JSONObject json = param.optJSONObject("video");
-	        JSONObject mandatoryJSON = json.optJSONObject("mandatory");
+//		try {
+//			JSONObject json = param.optJSONObject("video");
+//	        JSONObject mandatoryJSON = json.optJSONObject("mandatory");
 //	        if (mandatoryJSON != null) {
 //	          JSONArray mandatoryKeys = mandatoryJSON.names();
 //	          if (mandatoryKeys != null) {
@@ -308,34 +308,34 @@ public class PCManager {
 //	            }
 //	          }
 //	        }
-	        videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("width", "640"));
-	        videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("height", "480"));
+//	        videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("width", "640"));
+//	        videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("height", "480"));
 	        
-	        JSONArray optionalJSON = json.optJSONArray("optional");
-	        if (optionalJSON != null) {
-	          for (int i = 0; i < optionalJSON.length(); ++i) {
-	            JSONObject keyValueDict = optionalJSON.getJSONObject(i);
-	            String key = keyValueDict.names().getString(0);
-	            String value = keyValueDict.getString(key);
-	            videoConstraints.optional.add(
-	                new MediaConstraints.KeyValuePair(key, value));
-	          }
-	        }
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+//	        JSONArray optionalJSON = json.optJSONArray("optional");
+//	        if (optionalJSON != null) {
+//	          for (int i = 0; i < optionalJSON.length(); ++i) {
+//	            JSONObject keyValueDict = optionalJSON.getJSONObject(i);
+//	            String key = keyValueDict.names().getString(0);
+//	            String value = keyValueDict.getString(key);
+//	            videoConstraints.optional.add(
+//	                new MediaConstraints.KeyValuePair(key, value));
+//	          }
+//	        }
+//		} catch (JSONException e) {
+//			e.printStackTrace();
+//		}
 		
 		// 获取本地流
-		if(media_stream_local == null) {
-			media_stream_local = pc_factory.createLocalMediaStream("ARDAMS");
-			VideoCapturer video_capturer = null;
-			video_capturer = get_video_capturer();
-			VideoSource video_source = pc_factory.createVideoSource(video_capturer, videoConstraints);
-			VideoTrack video_track = pc_factory.createVideoTrack("ARDAMSv0", video_source);
-			
-			media_stream_local.addTrack(video_track);
-			media_stream_local.addTrack(pc_factory.createAudioTrack("ARDAMSa0"));
-		}
+//		if(media_stream_local == null) {
+//			media_stream_local = pc_factory.createLocalMediaStream("ARDAMS");
+//			VideoCapturer video_capturer = null;
+//			video_capturer = get_video_capturer();
+//			video_source = pc_factory.createVideoSource(video_capturer, videoConstraints);
+//			VideoTrack video_track = pc_factory.createVideoTrack("ARDAMSv0", video_source);
+//			
+//			media_stream_local.addTrack(video_track);
+//			media_stream_local.addTrack(pc_factory.createAudioTrack("ARDAMSa0"));
+//		}
 		
 		// 产生本地流JSON对象
 		JSONObject cb_param = new JSONObject();
@@ -364,24 +364,24 @@ public class PCManager {
 	 * 私有方法，主要打开本地camera设备
 	 * @return
 	 */
-	private VideoCapturer get_video_capturer() {
-		String[] cameraFacing = { "front", "back" };
-		int[] cameraIndex = { 0, 1 };
-		int[] cameraOrientation = { 0, 90, 180, 270 };
-
-		for (String facing : cameraFacing) {
-			for (int index : cameraIndex) {
-				for (int orientation : cameraOrientation) {
-					String name = "Camera " + index + ", Facing " + facing
-							+ ", Orientation " + orientation;
-					VideoCapturer capturer = VideoCapturer.create(name);
-					if (capturer != null) {
-						return capturer;
-					}
-				}
-			}
-		}
-		
-		return null;
-	}	
+//	private VideoCapturer get_video_capturer() {
+//		String[] cameraFacing = { "front", "back" };
+//		int[] cameraIndex = { 0, 1 };
+//		int[] cameraOrientation = { 0, 90, 180, 270 };
+//
+//		for (String facing : cameraFacing) {
+//			for (int index : cameraIndex) {
+//				for (int orientation : cameraOrientation) {
+//					String name = "Camera " + index + ", Facing " + facing
+//							+ ", Orientation " + orientation;
+//					VideoCapturer capturer = VideoCapturer.create(name);
+//					if (capturer != null) {
+//						return capturer;
+//					}
+//				}
+//			}
+//		}
+//		
+//		return null;
+//	}	
 }

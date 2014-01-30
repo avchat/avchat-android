@@ -1,5 +1,8 @@
 package com.ccpony.avchat;
 
+import java.util.Iterator;
+import java.util.Map;
+
 import org.json.JSONObject;
 import org.webrtc.PeerConnectionFactory;
 
@@ -10,6 +13,7 @@ import android.view.Menu;
 import android.widget.LinearLayout;
 
 import com.ccpony.avchat.peerconnection.PCManager;
+import com.ccpony.avchat.peerconnection.PCWrapper;
 import com.ccpony.avchat.view.VideoStreamsView;
 
 public class MainActivity extends Activity {
@@ -28,11 +32,14 @@ public class MainActivity extends Activity {
 		js_controller = new JSController(this);
 		this.layout_line = new LinearLayout(this);
 		this.layout_line.setOrientation(LinearLayout.VERTICAL);
+		this.setContentView(this.layout_line);
+		
 		pc_manager = new PCManager(js_controller.get_webView(), this,
 				layout_line);
 		// this.setContentView(pc_manager.get_line_layout());
-		this.setContentView(this.layout_line);
+		
 		js_controller.start(js_controller_url, pc_manager);
+		
 	}
 
 	@Override
@@ -40,6 +47,16 @@ public class MainActivity extends Activity {
 		super.onDestroy();
 
 		js_controller.stop();
+		
+		pc_manager.mediastream_stop(null);
+		
+		Iterator iter = pc_manager.map_pc.entrySet().iterator(); 
+		while (iter.hasNext()) { 
+		    Map.Entry entry = (Map.Entry) iter.next(); 
+		    String key = (String)entry.getKey(); 
+		    PCWrapper val = (PCWrapper)entry.getValue(); 
+		    val.close();
+		} 
 	}
 
 	@Override

@@ -13,7 +13,7 @@ public class VideoPlayer {
 		this.player_id = player_id;
 		
 		videoTrack.addRenderer(new VideoRenderer(new VideoCallbacks(vsv,
-				VideoStreamsView.Endpoint.LOCAL)));
+				VideoStreamsView.Endpoint.REMOTE)));
 	}
 
 	private class VideoCallbacks implements VideoRenderer.Callbacks {
