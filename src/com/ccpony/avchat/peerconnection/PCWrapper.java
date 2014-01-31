@@ -235,7 +235,7 @@ public class PCWrapper {
 	 * @return
 	 */
 	public void addStream() {
-//		// media
+		// media
 		MediaConstraints Constraints = new MediaConstraints();
 		this.media_stream_local = factory.createLocalMediaStream("ARDAMS");
 		VideoCapturer capturer = get_video_capturer();

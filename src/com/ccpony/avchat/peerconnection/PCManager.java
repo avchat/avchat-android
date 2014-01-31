@@ -1,22 +1,14 @@
 package com.ccpony.avchat.peerconnection;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
-import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
-import org.webrtc.VideoCapturer;
-import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
-import org.webrtc.MediaConstraints.KeyValuePair;
 
-import android.content.Context;
 import android.graphics.Point;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
